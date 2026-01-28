@@ -1,0 +1,51 @@
+{
+  "name": "BaZi Fortune API",
+  "description": "Professional Chinese astrology service with AI-powered analysis",
+  "repository": "https://github.com/yourusername/bazi-fortune-app",
+  "template": "nodejs",
+  "plugins": [
+    {
+      "type": "mongodb",
+      "name": "bazi-mongodb"
+    },
+    {
+      "type": "redis",
+      "name": "bazi-redis"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production"
+    },
+    "JWT_SECRET": {
+      "description": "JWT signing secret (will be auto-generated)",
+      "generator": "secret"
+    },
+    "JWT_EXPIRE": {
+      "description": "JWT expiration time",
+      "value": "7d"
+    },
+    "OPENAI_API_KEY": {
+      "description": "OpenAI API key for AI features (optional)",
+      "required": false
+    },
+    "OPENAI_MODEL": {
+      "description": "OpenAI model to use",
+      "value": "gpt-4"
+    },
+    "FRONTEND_URL": {
+      "description": "Your frontend domain for CORS (optional)",
+      "required": false
+    }
+  },
+  "build": {
+    "commands": [
+      "npm install"
+    ]
+  },
+  "deploy": {
+    "startCommand": "npm start",
+    "healthcheckPath": "/health"
+  }
+}

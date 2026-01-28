@@ -1,0 +1,480 @@
+/* 首页样式 */
+
+.container {
+  padding-bottom: 120rpx;
+}
+
+/* 表单样式 */
+.gender-group,
+.calendar-group {
+  display: flex;
+  gap: 40rpx;
+  margin-top: 16rpx;
+}
+
+.gender-option,
+.calendar-option {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 30rpx;
+}
+
+.picker-display {
+  background: #fff;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  font-size: 30rpx;
+  color: #333;
+  min-height: 40rpx;
+}
+
+.picker-display:empty::after {
+  content: attr(placeholder);
+  color: #999;
+}
+
+.shichen-display {
+  background: linear-gradient(135deg, #F5F5DC, #FFF8DC);
+  border: 2rpx solid #8B4513;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  font-size: 30rpx;
+  color: #8B4513;
+  font-weight: bold;
+  text-align: center;
+}
+
+.switch-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.helper-text {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 24rpx;
+  margin: 40rpx 0;
+}
+
+.action-buttons button {
+  flex: 1;
+}
+
+/* 命盘显示样式 */
+.chart-card {
+  background: linear-gradient(135deg, #FFF8DC, #F5F5DC);
+  border: 3rpx solid #8B4513;
+  position: relative;
+}
+
+.chart-card::before {
+  content: '';
+  position: absolute;
+  top: -3rpx;
+  left: -3rpx;
+  right: -3rpx;
+  bottom: -3rpx;
+  background: linear-gradient(45deg, #8B4513, #A0522D, #8B4513, #A0522D);
+  border-radius: 16rpx;
+  z-index: -1;
+}
+
+/* 八字排盘样式 */
+.bazi-section {
+  margin: 30rpx 0;
+}
+
+.pillar-labels {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+  text-align: center;
+}
+
+.pillar-label {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #8B4513;
+  padding: 12rpx;
+  background: rgba(139, 69, 19, 0.1);
+  border-radius: 8rpx;
+}
+
+.bazi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16rpx;
+}
+
+.bazi-pillar {
+  background: linear-gradient(135deg, #FFFFFF, #FFF8DC);
+  border: 3rpx solid #8B4513;
+  border-radius: 16rpx;
+  padding: 24rpx 12rpx;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 4rpx 12rpx rgba(139, 69, 19, 0.2);
+}
+
+.bazi-pillar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 4rpx;
+  background: linear-gradient(90deg, transparent, #8B4513, transparent);
+}
+
+.tiangan {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #8B4513;
+  margin-bottom: 8rpx;
+  text-shadow: 1rpx 1rpx 2rpx rgba(0,0,0,0.1);
+}
+
+.dizhi {
+  font-size: 42rpx;
+  color: #A0522D;
+  margin-bottom: 12rpx;
+  font-weight: bold;
+}
+
+.wuxing {
+  font-size: 24rpx;
+  color: #666;
+  background: rgba(139, 69, 19, 0.1);
+  padding: 6rpx 12rpx;
+  border-radius: 12rpx;
+  display: inline-block;
+}
+
+/* 子节样式 */
+.subsection-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #8B4513;
+  margin: 30rpx 0 20rpx 0;
+  padding-left: 24rpx;
+  border-left: 6rpx solid #8B4513;
+}
+
+/* 十神样式 */
+.shishen-section {
+  margin: 30rpx 0;
+}
+
+.shishen-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12rpx;
+}
+
+.shishen-item {
+  background: rgba(139, 69, 19, 0.1);
+  border-radius: 8rpx;
+  padding: 12rpx;
+  text-align: center;
+}
+
+.shishen-name {
+  font-size: 24rpx;
+  color: #8B4513;
+  font-weight: bold;
+}
+
+.shishen-position {
+  font-size: 22rpx;
+  color: #666;
+  margin-top: 4rpx;
+}
+
+/* 纳音样式 */
+.nayin-section {
+  margin: 30rpx 0;
+}
+
+.nayin-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12rpx;
+}
+
+.nayin-item {
+  background: rgba(139, 69, 19, 0.05);
+  border: 2rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  padding: 16rpx;
+  font-size: 26rpx;
+}
+
+.pillar-name {
+  color: #8B4513;
+  font-weight: bold;
+}
+
+.nayin-value {
+  color: #666;
+}
+
+/* 五行统计样式 */
+.wuxing-stats {
+  margin: 30rpx 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12rpx;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 20rpx 8rpx;
+  border-radius: 12rpx;
+  background: #fff;
+  border: 2rpx solid #e0e0e0;
+}
+
+.element-name {
+  font-size: 28rpx;
+  font-weight: bold;
+  margin-bottom: 8rpx;
+}
+
+.element-name.jin { color: #FFD700; }
+.element-name.mu { color: #228B22; }
+.element-name.shui { color: #4169E1; }
+.element-name.huo { color: #DC143C; }
+.element-name.tu { color: #8B4513; }
+
+.element-count {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin: 4rpx 0;
+}
+
+.element-strength {
+  font-size: 22rpx;
+  color: #666;
+  background: rgba(0,0,0,0.05);
+  padding: 4rpx 8rpx;
+  border-radius: 8rpx;
+}
+
+/* 命盘操作按钮 */
+.chart-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 40rpx;
+}
+
+.chart-actions button {
+  flex: 1;
+  font-size: 28rpx;
+  padding: 20rpx 16rpx;
+}
+
+/* 历史记录样式 */
+.history-card {
+  background: linear-gradient(135deg, #F8F8FF, #F0F8FF);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.history-item {
+  background: #fff;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  transition: all 0.3s ease;
+}
+
+.history-item:active {
+  transform: scale(0.98);
+  background: #f9f9f9;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.history-name {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.history-date {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.history-bazi {
+  font-size: 28rpx;
+  color: #8B4513;
+  font-family: 'KaiTi', serif;
+  background: rgba(139, 69, 19, 0.1);
+  padding: 12rpx 16rpx;
+  border-radius: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.history-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 32rpx;
+}
+
+.action-text {
+  font-size: 26rpx;
+  color: #8B4513;
+  padding: 8rpx 16rpx;
+  border-radius: 16rpx;
+  background: rgba(139, 69, 19, 0.1);
+}
+
+.action-text:active {
+  background: rgba(139, 69, 19, 0.2);
+}
+
+/* 加载遮罩 */
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  background: white;
+  border-radius: 16rpx;
+  padding: 60rpx 40rpx;
+  text-align: center;
+  min-width: 240rpx;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 6rpx solid #f3f3f3;
+  border-top: 6rpx solid #8B4513;
+  border-radius: 50%;
+  margin: 0 auto 20rpx auto;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #333;
+}
+
+/* 响应式设计 */
+@media (max-width: 375px) {
+  .bazi-grid {
+    gap: 12rpx;
+  }
+
+  .bazi-pillar {
+    padding: 20rpx 8rpx;
+  }
+
+  .tiangan {
+    font-size: 42rpx;
+  }
+
+  .dizhi {
+    font-size: 36rpx;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .chart-actions {
+    flex-direction: column;
+  }
+
+  .chart-actions button {
+    width: 100%;
+    margin-bottom: 16rpx;
+  }
+}
+
+/* 暗黑模式适配 */
+@media (prefers-color-scheme: dark) {
+  .chart-card {
+    background: linear-gradient(135deg, #2C2C2C, #3C3C3C);
+    color: #E0E0E0;
+  }
+
+  .bazi-pillar {
+    background: linear-gradient(135deg, #404040, #4C4C4C);
+    border-color: #A0522D;
+  }
+
+  .tiangan,
+  .section-title,
+  .subsection-title {
+    color: #D2B48C;
+  }
+
+  .history-item {
+    background: #404040;
+    border-color: #606060;
+    color: #E0E0E0;
+  }
+}
+
+/* 动画效果 */
+.bazi-pillar {
+  animation: pillarFadeIn 0.6s ease-out;
+}
+
+.bazi-pillar:nth-child(1) { animation-delay: 0.1s; }
+.bazi-pillar:nth-child(2) { animation-delay: 0.2s; }
+.bazi-pillar:nth-child(3) { animation-delay: 0.3s; }
+.bazi-pillar:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes pillarFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

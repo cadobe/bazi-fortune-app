@@ -1,0 +1,222 @@
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="page-title">八字排盘</view>
+
+  <!-- 生辰信息输入卡片 -->
+  <view class="card fade-in">
+    <view class="section-title">生辰信息</view>
+
+    <!-- 姓名输入 -->
+    <view class="input-group">
+      <view class="input-label">姓名</view>
+      <input class="input-field"
+             placeholder="请输入姓名（可选）"
+             value="{{formData.name}}"
+             bindinput="onNameInput" />
+    </view>
+
+    <!-- 性别选择 -->
+    <view class="input-group">
+      <view class="input-label">性别</view>
+      <radio-group bindchange="onGenderChange" class="gender-group">
+        <label class="gender-option">
+          <radio value="male" checked="{{formData.gender === 'male'}}" />
+          <text>男</text>
+        </label>
+        <label class="gender-option">
+          <radio value="female" checked="{{formData.gender === 'female'}}" />
+          <text>女</text>
+        </label>
+      </radio-group>
+    </view>
+
+    <!-- 历法选择 -->
+    <view class="input-group">
+      <view class="input-label">历法</view>
+      <radio-group bindchange="onCalendarTypeChange" class="calendar-group">
+        <label class="calendar-option">
+          <radio value="solar" checked="{{formData.calendarType === 'solar'}}" />
+          <text>阳历</text>
+        </label>
+        <label class="calendar-option">
+          <radio value="lunar" checked="{{formData.calendarType === 'lunar'}}" />
+          <text>农历</text>
+        </label>
+      </radio-group>
+    </view>
+
+    <!-- 日期选择 -->
+    <view class="input-group">
+      <view class="input-label">出生日期</view>
+      <picker mode="date"
+              value="{{formData.date}}"
+              bindchange="onDateChange"
+              class="date-picker">
+        <view class="picker-display">
+          {{formData.date || '请选择出生日期'}}
+        </view>
+      </picker>
+    </view>
+
+    <!-- 时间选择 -->
+    <view class="input-group">
+      <view class="input-label">出生时间</view>
+      <picker mode="time"
+              value="{{formData.time}}"
+              bindchange="onTimeChange"
+              class="time-picker">
+        <view class="picker-display">
+          {{formData.time || '请选择出生时间'}}
+        </view>
+      </picker>
+    </view>
+
+    <!-- 时辰显示 -->
+    <view class="input-group" wx:if="{{shichen}}">
+      <view class="input-label">对应时辰</view>
+      <view class="shichen-display">{{shichen}}</view>
+    </view>
+
+    <!-- 地区选择 -->
+    <view class="input-group">
+      <view class="input-label">出生地区</view>
+      <picker mode="multiSelector"
+              range="{{regionData}}"
+              bindchange="onRegionChange"
+              class="region-picker">
+        <view class="picker-display">
+          {{selectedRegion || '请选择出生地区（用于真太阳时校正）'}}
+        </view>
+      </picker>
+    </view>
+
+    <!-- 真太阳时校正开关 -->
+    <view class="input-group">
+      <view class="switch-row">
+        <view class="input-label">真太阳时校正</view>
+        <switch checked="{{formData.useTrueSolarTime}}"
+                bindchange="onTrueSolarTimeChange" />
+      </view>
+      <view class="helper-text">
+        开启后将根据出生地经纬度进行时间校正，提高排盘准确性
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-buttons">
+    <button class="btn-primary"
+            bindtap="generateChart"
+            disabled="{{!canGenerate}}">
+      立即排盘
+    </button>
+    <button class="btn-secondary"
+            bindtap="showSampleChart">
+      查看示例
+    </button>
+  </view>
+
+  <!-- 八字命盘显示 -->
+  <view class="card chart-card fade-in" wx:if="{{chartData}}">
+    <view class="section-title">
+      {{formData.name ? formData.name + '的' : ''}}八字命盘
+    </view>
+
+    <!-- 四柱八字 -->
+    <view class="bazi-section">
+      <view class="pillar-labels">
+        <view class="pillar-label">年柱</view>
+        <view class="pillar-label">月柱</view>
+        <view class="pillar-label">日柱</view>
+        <view class="pillar-label">时柱</view>
+      </view>
+
+      <view class="bazi-grid">
+        <view class="bazi-pillar" wx:for="{{chartData.pillars}}" wx:key="index">
+          <view class="tiangan">{{item.tiangan}}</view>
+          <view class="dizhi">{{item.dizhi}}</view>
+          <view class="wuxing">{{item.wuxing}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 十神信息 -->
+    <view class="shishen-section">
+      <view class="subsection-title">十神</view>
+      <view class="shishen-grid">
+        <view class="shishen-item" wx:for="{{chartData.shishen}}" wx:key="index">
+          <view class="shishen-name">{{item.name}}</view>
+          <view class="shishen-position">{{item.position}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 纳音 -->
+    <view class="nayin-section">
+      <view class="subsection-title">纳音</view>
+      <view class="nayin-list">
+        <view class="nayin-item" wx:for="{{chartData.nayin}}" wx:key="index">
+          <text class="pillar-name">{{item.pillar}}：</text>
+          <text class="nayin-value">{{item.value}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 五行统计 -->
+    <view class="wuxing-stats">
+      <view class="subsection-title">五行分布</view>
+      <view class="stats-grid">
+        <view class="stat-item" wx:for="{{chartData.wuxingStats}}" wx:key="index">
+          <view class="element-name {{item.element}}">{{item.name}}</view>
+          <view class="element-count">{{item.count}}</view>
+          <view class="element-strength">{{item.strength}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="chart-actions">
+      <button class="btn-primary" bindtap="getAIAnalysis">
+        AI智能解读
+      </button>
+      <button class="btn-secondary" bindtap="saveChart">
+        保存命盘
+      </button>
+      <button class="btn-ghost" bindtap="shareChart">
+        分享命盘
+      </button>
+    </view>
+  </view>
+
+  <!-- 历史命盘 -->
+  <view class="card history-card fade-in" wx:if="{{historyCharts.length > 0}}">
+    <view class="section-title">历史记录</view>
+    <view class="history-list">
+      <view class="history-item"
+            wx:for="{{historyCharts}}"
+            wx:key="id"
+            bindtap="loadHistoryChart"
+            data-chart="{{item}}">
+        <view class="history-header">
+          <view class="history-name">{{item.name || '匿名'}}</view>
+          <view class="history-date">{{item.createTime}}</view>
+        </view>
+        <view class="history-bazi">
+          {{item.baziString}}
+        </view>
+        <view class="history-actions">
+          <text class="action-text" catchtap="deleteChart" data-id="{{item.id}}">删除</text>
+          <text class="action-text" catchtap="compareChart" data-chart="{{item}}">对比</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 加载遮罩 -->
+<view class="loading-mask" wx:if="{{isLoading}}">
+  <view class="loading-content">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">正在排盘中...</text>
+  </view>
+</view>

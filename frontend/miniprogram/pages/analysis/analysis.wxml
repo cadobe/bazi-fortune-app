@@ -1,0 +1,232 @@
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="page-title">AI智能解读</view>
+
+  <!-- 命盘信息概览 -->
+  <view class="card chart-overview fade-in">
+    <view class="section-title">命盘信息</view>
+
+    <view class="overview-info">
+      <view class="info-row">
+        <text class="info-label">姓名：</text>
+        <text class="info-value">{{chartData.birthInfo.name || '匿名'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">八字：</text>
+        <text class="info-value bazi-text">{{chartData.baziString}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">日干：</text>
+        <text class="info-value day-master">{{chartData.dayTiangan}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- AI解读结果 -->
+  <view class="card analysis-card fade-in" wx:if="{{analysisResult}}">
+    <view class="section-title">
+      <text>AI解读报告</text>
+      <view class="confidence-badge" wx:if="{{analysisResult.confidence}}">
+        准确度: {{analysisResult.confidence}}%
+      </view>
+    </view>
+
+    <!-- 基本性格分析 -->
+    <view class="analysis-section">
+      <view class="subsection-title">基本性格特质</view>
+      <view class="analysis-content">
+        <text>{{analysisResult.personality}}</text>
+      </view>
+    </view>
+
+    <!-- 事业分析 -->
+    <view class="analysis-section">
+      <view class="subsection-title">事业运势</view>
+      <view class="analysis-content">
+        <text>{{analysisResult.career}}</text>
+      </view>
+      <view class="tags">
+        <view class="tag tag-info" wx:for="{{analysisResult.careerTags}}" wx:key="*this">
+          {{item}}
+        </view>
+      </view>
+    </view>
+
+    <!-- 财运分析 -->
+    <view class="analysis-section">
+      <view class="subsection-title">财运状况</view>
+      <view class="analysis-content">
+        <text>{{analysisResult.wealth}}</text>
+      </view>
+      <view class="fortune-meter">
+        <view class="meter-label">财运指数</view>
+        <view class="meter-bar">
+          <view class="meter-fill" style="width: {{analysisResult.wealthScore}}%"></view>
+        </view>
+        <view class="meter-score">{{analysisResult.wealthScore}}/100</view>
+      </view>
+    </view>
+
+    <!-- 感情分析 -->
+    <view class="analysis-section">
+      <view class="subsection-title">感情运势</view>
+      <view class="analysis-content">
+        <text>{{analysisResult.relationship}}</text>
+      </view>
+      <view class="fortune-meter">
+        <view class="meter-label">桃花指数</view>
+        <view class="meter-bar">
+          <view class="meter-fill" style="width: {{analysisResult.loveScore}}%"></view>
+        </view>
+        <view class="meter-score">{{analysisResult.loveScore}}/100</view>
+      </view>
+    </view>
+
+    <!-- 健康分析 -->
+    <view class="analysis-section">
+      <view class="subsection-title">健康状况</view>
+      <view class="analysis-content">
+        <text>{{analysisResult.health}}</text>
+      </view>
+      <view class="health-tips">
+        <view class="tip-item" wx:for="{{analysisResult.healthTips}}" wx:key="*this">
+          <text class="tip-icon">💡</text>
+          <text class="tip-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 大运流年 -->
+    <view class="analysis-section">
+      <view class="subsection-title">运势趋势</view>
+      <view class="luck-timeline">
+        <view class="timeline-item" wx:for="{{analysisResult.luckPeriods}}" wx:key="age">
+          <view class="timeline-age">{{item.age}}岁</view>
+          <view class="timeline-luck {{item.type}}">{{item.description}}</view>
+        </view>
+      </view>
+    </div>
+
+    <!-- 开运建议 -->
+    <view class="analysis-section">
+      <view class="subsection-title">开运建议</view>
+      <view class="suggestions">
+        <view class="suggestion-category" wx:for="{{analysisResult.suggestions}}" wx:key="category">
+          <view class="category-title">{{item.category}}</view>
+          <view class="suggestion-list">
+            <view class="suggestion-item" wx:for="{{item.items}}" wx:for-item="suggestion" wx:key="*this">
+              <text class="suggestion-icon">✨</text>
+              <text class="suggestion-text">{{suggestion}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- AI问答聊天 -->
+  <view class="card chat-card fade-in">
+    <view class="section-title">AI命理问答</view>
+
+    <!-- 聊天记录 -->
+    <view class="chat-messages" scroll-y="true">
+      <view class="message-item {{message.type}}" wx:for="{{chatMessages}}" wx:key="id">
+        <view class="message-avatar">
+          <image src="{{message.type === 'user' ? '/assets/icons/user-avatar.png' : '/assets/icons/ai-avatar.png'}}" />
+        </view>
+        <view class="message-content">
+          <view class="message-text">{{message.content}}</view>
+          <view class="message-time">{{message.time}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快速问题 -->
+    <view class="quick-questions" wx:if="{{chatMessages.length === 0}}">
+      <view class="quick-title">快速提问</view>
+      <view class="quick-buttons">
+        <button class="quick-btn"
+                wx:for="{{quickQuestions}}"
+                wx:key="*this"
+                bindtap="askQuickQuestion"
+                data-question="{{item}}">
+          {{item}}
+        </button>
+      </view>
+    </view>
+
+    <!-- 输入框 -->
+    <view class="chat-input">
+      <input class="input-field"
+             placeholder="请输入您想了解的命理问题..."
+             value="{{inputText}}"
+             bindinput="onInputChange"
+             confirm-type="send"
+             bindconfirm="sendMessage" />
+      <button class="send-btn"
+              bindtap="sendMessage"
+              disabled="{{!inputText || isSending}}">
+        {{isSending ? '发送中...' : '发送'}}
+      </button>
+    </view>
+  </view>
+
+  <!-- 专业咨询 -->
+  <view class="card consult-card fade-in">
+    <view class="section-title">专业命理师咨询</view>
+
+    <view class="consult-info">
+      <view class="info-text">
+        AI解读为您提供了基础分析，如需更深入的专业指导，可预约经验丰富的命理师进行一对一咨询。
+      </view>
+
+      <view class="master-list">
+        <view class="master-item" wx:for="{{masters}}" wx:key="id">
+          <image class="master-avatar" src="{{item.avatar}}" />
+          <view class="master-info">
+            <view class="master-name">{{item.name}}</view>
+            <view class="master-title">{{item.title}}</view>
+            <view class="master-rating">
+              <text class="rating-star">★★★★★</text>
+              <text class="rating-score">{{item.rating}}</text>
+            </view>
+          </view>
+          <view class="consult-price">
+            <text class="price">¥{{item.price}}/次</text>
+            <button class="btn-secondary consult-btn"
+                    bindtap="consultMaster"
+                    data-master="{{item}}">
+              预约咨询
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-buttons">
+    <button class="btn-secondary" bindtap="shareAnalysis">
+      分享解读
+    </button>
+    <button class="btn-primary" bindtap="saveAnalysis">
+      保存报告
+    </button>
+  </view>
+</view>
+
+<!-- 加载遮罩 -->
+<view class="loading-mask" wx:if="{{isAnalyzing}}">
+  <view class="loading-content">
+    <view class="ai-loading">
+      <view class="ai-brain">🧠</view>
+      <view class="loading-dots">
+        <view class="dot"></view>
+        <view class="dot"></view>
+        <view class="dot"></view>
+      </view>
+    </view>
+    <text class="loading-text">AI正在深度分析中...</text>
+    <text class="loading-subtext">请稍候，这可能需要几秒钟</text>
+  </view>
+</view>

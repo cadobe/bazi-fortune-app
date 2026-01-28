@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: bazi-fortune-api
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: bazi-mongodb
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: bazi-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRE
+        value: 7d
+
+databases:
+  - name: bazi-mongodb
+    databaseName: bazi-fortune
+    user: bazi_user
+    region: oregon
+    plan: starter
+
+  - name: bazi-redis
+    type: redis
+    region: oregon
+    plan: starter

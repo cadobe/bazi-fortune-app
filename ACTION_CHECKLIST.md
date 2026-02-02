@@ -90,8 +90,9 @@ MONGODB_URI=${{MongoDB.MONGO_URL}}
 REDIS_URL=${{Redis.REDIS_URL}}
 JWT_SECRET=d3a9d9ae2da8c6b3dddb7d22d29f235dfd3b5d37b787229ac8cdd05ad519ebf9b03f137b4d716a7e0dff41796cdf77115e70a4a0a46f07e1319c9b5707520752
 JWT_EXPIRE=7d
-OPENAI_API_KEY=sk-YOUR_ACTUAL_OPENAI_KEY_HERE
-OPENAI_MODEL=gpt-4
+LLM_PROVIDER=zhipu
+LLM_API_KEY=YOUR_ZHIPU_API_KEY_HERE
+LLM_MODEL=glm-4-flash
 FRONTEND_URL=${{RAILWAY_PUBLIC_DOMAIN}}
 UPLOAD_MAX_SIZE=10485760
 UPLOAD_PATH=./uploads
@@ -99,7 +100,16 @@ RATE_LIMIT_WINDOW=15
 RATE_LIMIT_MAX=100
 ```
 
-**⚠️ IMPORTANT:** Replace `sk-YOUR_ACTUAL_OPENAI_KEY_HERE` with your real OpenAI API key!
+**⚠️ IMPORTANT:** Replace `YOUR_ZHIPU_API_KEY_HERE` with your actual Zhipu GLM API key!
+
+**如何获取智谱 API Key（免费）：**
+1. 访问 https://open.bigmodel.cn/
+2. 注册/登录账号
+3. 进入控制台 → API Keys
+4. 创建新 API Key
+5. 复制密钥
+
+**详细申请指南：** 查看 [`GLM_API_SETUP_GUIDE.md`](GLM_API_SETUP_GUIDE.md)
 
 5. Railway will automatically redeploy with new variables
 

@@ -22,10 +22,24 @@ JWT_SECRET=d3a9d9ae2da8c6b3dddb7d22d29f235dfd3b5d37b787229ac8cdd05ad519ebf9b03f1
 JWT_EXPIRE=7d
 ```
 
-### AI Service (REQUIRED - Get from OpenAI)
+### AI Service (使用智谱 GLM-4-Flash - 免费！)
 ```
-OPENAI_API_KEY=sk-YOUR_OPENAI_KEY_HERE
-OPENAI_MODEL=gpt-4
+LLM_PROVIDER=zhipu
+LLM_API_KEY=YOUR_ZHIPU_API_KEY_HERE
+LLM_MODEL=glm-4-flash
+```
+**获取智谱 API Key（免费）：**
+1. 访问 https://open.bigmodel.cn/
+2. 注册/登录账号
+3. 进入控制台 → API Keys
+4. 创建新的 API Key
+5. 复制密钥（格式类似：`abc123def456...`）
+
+**或使用 OpenAI（付费）：**
+```
+LLM_PROVIDER=openai
+LLM_API_KEY=sk-your-openai-key
+LLM_MODEL=gpt-4
 ```
 **Get your key from:** https://platform.openai.com/api-keys
 
@@ -64,8 +78,9 @@ RATE_LIMIT_MAX=100
 NODE_ENV=production
 JWT_SECRET=d3a9d9ae2da8c6b3dddb7d22d29f235dfd3b5d37b787229ac8cdd05ad519ebf9b03f137b4d716a7e0dff41796cdf77115e70a4a0a46f07e1319c9b5707520752
 JWT_EXPIRE=7d
-OPENAI_API_KEY=sk-YOUR_OPENAI_KEY_HERE
-OPENAI_MODEL=gpt-4
+LLM_PROVIDER=zhipu
+LLM_API_KEY=YOUR_ZHIPU_API_KEY_HERE
+LLM_MODEL=glm-4-flash
 FRONTEND_URL=https://your-app.up.railway.app
 UPLOAD_MAX_SIZE=10485760
 UPLOAD_PATH=./uploads
@@ -77,7 +92,8 @@ RATE_LIMIT_MAX=100
 
 ## Important Notes
 
-1. **OPENAI_API_KEY is REQUIRED** - The app will not work without it
-2. **Update FRONTEND_URL** after getting your Railway deployment URL
-3. **Email settings are optional** - Only add if you want email notifications
-4. MongoDB and Redis URLs will be auto-populated when you add those databases in Railway
+1. **LLM_API_KEY is REQUIRED** - Get free API key from https://open.bigmodel.cn
+2. **Using GLM-4-Flash is FREE** - Zero cost for AI features!
+3. **Update FRONTEND_URL** after getting your Railway deployment URL
+4. **Email settings are optional** - Only add if you want email notifications
+5. MongoDB and Redis URLs will be auto-populated when you add those databases in Railway

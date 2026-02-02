@@ -3,9 +3,17 @@ const logger = require('../utils/logger');
 
 class AIService {
   constructor() {
-    this.openaiApiKey = process.env.OPENAI_API_KEY;
-    this.model = process.env.OPENAI_MODEL || 'gpt-4';
-    this.baseURL = 'https://api.openai.com/v1';
+    // Support multiple LLM providers
+    this.provider = process.env.LLM_PROVIDER || 'zhipu'; // 'openai' or 'zhipu'
+    this.apiKey = process.env.LLM_API_KEY || process.env.OPENAI_API_KEY;
+    this.model = process.env.LLM_MODEL || 'glm-4-flash';
+
+    // Set base URL based on provider
+    if (this.provider === 'zhipu') {
+      this.baseURL = 'https://open.bigmodel.cn/api/paas/v4';
+    } else {
+      this.baseURL = process.env.LLM_BASE_URL || 'https://api.openai.com/v1';
+    }
   }
 
   /**
@@ -70,14 +78,14 @@ class AIService {
   }
 
   /**
-   * Call OpenAI API
+   * Call LLM API (supports OpenAI, Zhipu GLM, and other providers)
    */
   async callOpenAI(prompt, options = {}) {
-    if (!this.openaiApiKey) {
-      throw new Error('OpenAI API key not configured');
+    if (!this.apiKey) {
+      throw new Error(`${this.provider} API key not configured`);
     }
 
-    const response = await axios.post(`${this.baseURL}/chat/completions`, {
+    const requestBody = {
       model: this.model,
       messages: [
         {
@@ -90,13 +98,19 @@ class AIService {
         }
       ],
       temperature: options.temperature || 0.7,
-      max_tokens: options.maxTokens || 1000,
-      top_p: 1,
-      frequency_penalty: 0,
-      presence_penalty: 0
-    }, {
+      top_p: 1
+    };
+
+    // Add max_tokens for OpenAI, not needed for Zhipu GLM
+    if (this.provider !== 'zhipu') {
+      requestBody.max_tokens = options.maxTokens || 1000;
+      requestBody.frequency_penalty = 0;
+      requestBody.presence_penalty = 0;
+    }
+
+    const response = await axios.post(`${this.baseURL}/chat/completions`, requestBody, {
       headers: {
-        'Authorization': `Bearer ${this.openaiApiKey}`,
+        'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json'
       },
       timeout: 30000

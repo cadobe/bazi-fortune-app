@@ -28,9 +28,14 @@ redisClient.on('connect', () => {
 
 redisClient.on('error', (error) => {
   logger.error('Redis connection error:', error);
+  // Don't exit, allow app to continue without Redis
 });
 
-redisClient.connect();
+// Connect to Redis with error handling
+redisClient.connect().catch((error) => {
+  logger.error('Failed to connect to Redis:', error);
+  logger.warn('Continuing without Redis cache');
+});
 
 // Make Redis client available globally
 global.redisClient = redisClient;

@@ -9,12 +9,20 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
 // MongoDB connection
 if (MONGODB_URI && MONGODB_URI !== 'mongodb://localhost:27017/bazi-fortune') {
+  logger.info('Attempting to connect to MongoDB...');
+  logger.info('MongoDB URI configured: ' + MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@'));
+
   mongoose.connect(MONGODB_URI)
     .then(() => {
-      logger.info('Connected to MongoDB');
+      logger.info('✓ Successfully connected to MongoDB');
     })
     .catch((error) => {
-      logger.error('MongoDB connection error:', error);
+      logger.error('✗ MongoDB connection error:');
+      logger.error('Error name: ' + error.name);
+      logger.error('Error message: ' + error.message);
+      if (error.stack) {
+        logger.error('Stack trace: ' + error.stack);
+      }
       logger.warn('Continuing without MongoDB - some features may not work');
     });
 } else {

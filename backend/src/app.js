@@ -53,7 +53,8 @@ app.get('/health', (req, res) => {
     uptime: process.uptime(),
     database: {
       mongodb: mongoStates[mongoStatus] || 'unknown',
-      uri: process.env.MONGODB_URI ? 'configured' : 'not configured'
+      uri: process.env.MONGODB_URI ? 'configured' : 'not configured',
+      error: mongoose.connection.error ? mongoose.connection.error.message : null
     }
   });
 });

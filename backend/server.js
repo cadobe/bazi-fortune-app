@@ -8,14 +8,19 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bazi-f
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
 // MongoDB connection
-mongoose.connect(MONGODB_URI)
-  .then(() => {
-    logger.info('Connected to MongoDB');
-  })
-  .catch((error) => {
-    logger.error('MongoDB connection error:', error);
-    process.exit(1);
-  });
+if (MONGODB_URI && MONGODB_URI !== 'mongodb://localhost:27017/bazi-fortune') {
+  mongoose.connect(MONGODB_URI)
+    .then(() => {
+      logger.info('Connected to MongoDB');
+    })
+    .catch((error) => {
+      logger.error('MongoDB connection error:', error);
+      logger.warn('Continuing without MongoDB - some features may not work');
+    });
+} else {
+  logger.warn('MONGODB_URI not configured - running without database');
+  logger.warn('Please add MongoDB in Railway: New → Database → Add MongoDB');
+}
 
 // Redis connection
 const redisClient = redis.createClient({

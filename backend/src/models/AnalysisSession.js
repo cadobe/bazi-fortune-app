@@ -9,7 +9,7 @@ const analysisSessionSchema = new mongoose.Schema({
   chart: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Chart',
-    required: true
+    required: false
   },
   sessionId: {
     type: String,

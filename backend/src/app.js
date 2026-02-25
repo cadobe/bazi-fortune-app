@@ -44,10 +44,18 @@ app.use(morgan('combined', { stream: { write: message => logger.info(message.tri
 
 // Health check endpoint
 app.get('/health', (req, res) => {
+  const mongoStatus = mongoose.connection.readyState;
+  const mongoStates = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    database: {
+      mongodb: mongoStates[mongoStatus] || 'unknown',
+      uri: process.env.MONGODB_URI ? 'configured' : 'not configured',
+      error: mongoose.connection.error ? mongoose.connection.error.message : null
+    }
   });
 });
 

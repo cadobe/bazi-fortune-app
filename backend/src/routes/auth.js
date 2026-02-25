@@ -1,5 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
@@ -157,21 +158,41 @@ router.post('/wechat-login', async (req, res) => {
       });
     }
 
-    // Here you would normally call WeChat API to get openid/unionid
-    // For now, we'll create a mock implementation
-    const mockOpenid = `mock_openid_${Date.now()}`;
+    // Call WeChat jscode2session API if credentials are configured, otherwise use mock
+    let openid;
+    if (process.env.WECHAT_APPID && process.env.WECHAT_APP_SECRET) {
+      const wxRes = await axios.get('https://api.weixin.qq.com/sns/jscode2session', {
+        params: {
+          appid: process.env.WECHAT_APPID,
+          secret: process.env.WECHAT_APP_SECRET,
+          js_code: code,
+          grant_type: 'authorization_code'
+        },
+        timeout: 5000
+      });
+      if (wxRes.data.errcode) {
+        return res.status(400).json({
+          success: false,
+          message: `微信登录失败: ${wxRes.data.errmsg}`
+        });
+      }
+      openid = wxRes.data.openid;
+    } else {
+      // Development fallback: use code hash as stable openid so same device = same user
+      openid = `dev_openid_${Buffer.from(code).toString('base64').slice(0, 16)}`;
+    }
 
     // Check if user exists with this openid
-    let user = await User.findOne({ 'wechat.openid': mockOpenid });
+    let user = await User.findOne({ 'wechat.openid': openid });
 
     if (!user) {
       // Create new user
       user = new User({
-        username: `wechat_${mockOpenid.slice(-8)}`,
-        email: `${mockOpenid}@wechat.temp`,
+        username: `wechat_${openid.slice(-8)}`,
+        email: `${openid}@wechat.temp`,
         password: 'wechat_temp_password',
         wechat: {
-          openid: mockOpenid,
+          openid: openid,
           nickname: userInfo?.nickName || 'WeChat User',
           avatarUrl: userInfo?.avatarUrl || ''
         },

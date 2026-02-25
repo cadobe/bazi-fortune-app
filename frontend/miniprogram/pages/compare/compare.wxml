@@ -1,0 +1,41 @@
+<view class="container">
+  <view class="page-title">命盘对比</view>
+
+  <view class="loading-wrap" wx:if="{{isLoading}}">
+    <view class="loading-spinner"></view>
+    <view class="loading-text">正在分析合盘...</view>
+  </view>
+
+  <view wx:elif="{{chart1 && chart2}}">
+    <!-- 双盘展示 -->
+    <view class="two-chart-row">
+      <view class="mini-chart card">
+        <view class="chart-label">命盘一</view>
+        <view class="chart-person-name">{{chart1.birthInfo.name || '未命名'}}</view>
+        <view class="bazi-str">{{chart1.baziString}}</view>
+      </view>
+      <view class="vs-badge">VS</view>
+      <view class="mini-chart card">
+        <view class="chart-label">命盘二</view>
+        <view class="chart-person-name">{{chart2.birthInfo.name || '未命名'}}</view>
+        <view class="bazi-str">{{chart2.baziString}}</view>
+      </view>
+    </view>
+
+    <!-- 合婚结果 -->
+    <view class="card result-card" wx:if="{{comparison}}">
+      <view class="score-circle">
+        <view class="score-num">{{comparison.score}}</view>
+        <view class="score-label">合婚指数</view>
+      </view>
+      <view class="result-level">{{comparison.level}}</view>
+      <view class="result-summary">{{comparison.summary}}</view>
+      <view class="tips-title">相处建议</view>
+      <view class="tip-item" wx:for="{{comparison.tips}}" wx:key="index">· {{item}}</view>
+    </view>
+  </view>
+
+  <view wx:else class="empty-state">
+    <view class="empty-text">命盘数据不完整，请重新选择</view>
+  </view>
+</view>

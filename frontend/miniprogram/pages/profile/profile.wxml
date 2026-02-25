@@ -1,0 +1,38 @@
+<view class="container">
+  <view class="page-title">我的</view>
+
+  <!-- 未登录状态 -->
+  <view class="card login-card" wx:if="{{!isLoggedIn}}">
+    <view class="login-icon">🔮</view>
+    <view class="login-title">登录后享受更多功能</view>
+    <view class="login-desc">保存命盘到云端、历史记录多设备同步</view>
+    <button class="btn-primary" bindtap="handleLogin" loading="{{isLoading}}">
+      微信一键登录
+    </button>
+  </view>
+
+  <!-- 已登录状态 -->
+  <view wx:else>
+    <view class="card user-card">
+      <image class="user-avatar" src="{{userInfo.wechat.avatarUrl || '/assets/images/default-avatar.png'}}" />
+      <view class="user-name">{{userInfo.wechat.nickname || userInfo.username || '用户'}}</view>
+      <view class="user-stats">
+        <view class="stat-item">
+          <view class="stat-num">{{stats.totalCharts}}</view>
+          <view class="stat-label">命盘数</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-num">{{stats.totalShares}}</view>
+          <view class="stat-label">分享数</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="card menu-card">
+      <view class="menu-item" bindtap="handleLogout">
+        <text class="menu-text">退出登录</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+  </view>
+</view>

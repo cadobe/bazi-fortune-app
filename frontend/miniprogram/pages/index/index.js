@@ -1,5 +1,7 @@
 // 引入八字计算器
 const BaziCalculator = require('../../utils/baziCalculator')
+const { request, ensureLogin } = require('../../utils/api')
+const app = getApp()
 
 Page({
   data: {
@@ -307,8 +309,10 @@ Page({
       return
     }
 
+    // 通过 globalData 传递数据，避免 URL 参数大小限制
+    app.globalData.currentChart = this.data.chartData
     wx.navigateTo({
-      url: '/pages/analysis/analysis?chartData=' + JSON.stringify(this.data.chartData)
+      url: '/pages/analysis/analysis'
     })
   },
 
@@ -324,37 +328,44 @@ Page({
       return
     }
 
+    wx.showLoading({ title: '保存中...' })
+
+    const loggedIn = await ensureLogin()
+    if (loggedIn) {
+      try {
+        await request('/api/charts', 'POST', {
+          name: this.data.chartData.birthInfo.name || `命盘_${new Date().toLocaleDateString()}`,
+          birthInfo: this.data.chartData.birthInfo,
+          chartData: this.data.chartData
+        })
+        wx.hideLoading()
+        wx.showToast({ title: '保存成功', icon: 'success' })
+        this.loadHistoryCharts()
+        return
+      } catch (error) {
+        console.error('API保存失败，降级到本地存储：', error)
+        wx.hideLoading()
+      }
+    } else {
+      wx.hideLoading()
+    }
+
+    // 降级到本地存储
     try {
-      // 保存到本地存储
       const charts = wx.getStorageSync('savedCharts') || []
       const newChart = {
         id: Date.now(),
         ...this.data.chartData,
         createTime: new Date().toLocaleString()
       }
-
       charts.unshift(newChart)
-
-      // 最多保存50个
-      if (charts.length > 50) {
-        charts.splice(50)
-      }
-
+      if (charts.length > 50) charts.splice(50)
       wx.setStorageSync('savedCharts', charts)
-
-      wx.showToast({
-        title: '保存成功',
-        icon: 'success'
-      })
-
+      wx.showToast({ title: '保存成功', icon: 'success' })
       this.loadHistoryCharts()
-
     } catch (error) {
       console.error('保存失败：', error)
-      wx.showToast({
-        title: '保存失败',
-        icon: 'none'
-      })
+      wx.showToast({ title: '保存失败', icon: 'none' })
     }
   },
 
@@ -387,12 +398,21 @@ Page({
   /**
    * 加载历史记录
    */
-  loadHistoryCharts() {
+  async loadHistoryCharts() {
+    const token = wx.getStorageSync('token')
+    if (token) {
+      try {
+        const data = await request('/api/charts?limit=5')
+        this.setData({ historyCharts: data.charts || [] })
+        return
+      } catch (error) {
+        console.error('从API加载历史失败，降级本地存储：', error)
+      }
+    }
+    // 降级到本地存储
     try {
       const charts = wx.getStorageSync('savedCharts') || []
-      this.setData({
-        historyCharts: charts.slice(0, 5) // 只显示最近5个
-      })
+      this.setData({ historyCharts: charts.slice(0, 5) })
     } catch (error) {
       console.error('加载历史记录失败：', error)
     }
@@ -458,26 +478,31 @@ Page({
     wx.showModal({
       title: '确认删除',
       content: '确定要删除这个命盘记录吗？',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
-          try {
-            let charts = wx.getStorageSync('historyCharts') || []
-            charts = charts.filter(chart => chart.id !== chartId)
-            wx.setStorageSync('historyCharts', charts)
-
-            this.loadHistoryCharts()
-
-            wx.showToast({
-              title: '删除成功',
-              icon: 'success'
-            })
-          } catch (error) {
-            console.error('删除失败：', error)
-            wx.showToast({
-              title: '删除失败',
-              icon: 'none'
-            })
+          // MongoDB ObjectId 是24位十六进制字符串
+          const isApiChart = typeof chartId === 'string' && /^[0-9a-f]{24}$/i.test(chartId)
+          if (isApiChart) {
+            try {
+              await request(`/api/charts/${chartId}`, 'DELETE')
+            } catch (error) {
+              console.error('API删除失败：', error)
+            }
+          } else {
+            // 本地存储删除
+            try {
+              let charts = wx.getStorageSync('savedCharts') || []
+              charts = charts.filter(chart => chart.id !== chartId)
+              wx.setStorageSync('savedCharts', charts)
+              let history = wx.getStorageSync('historyCharts') || []
+              history = history.filter(chart => chart.id !== chartId)
+              wx.setStorageSync('historyCharts', history)
+            } catch (err) {
+              console.error('本地删除失败：', err)
+            }
           }
+          this.loadHistoryCharts()
+          wx.showToast({ title: '删除成功', icon: 'success' })
         }
       }
     })
@@ -497,9 +522,11 @@ Page({
       return
     }
 
-    wx.navigateTo({
-      url: `/pages/compare/compare?chart1=${JSON.stringify(this.data.chartData)}&chart2=${JSON.stringify(chart)}`
-    })
+    app.globalData.compareCharts = {
+      chart1: this.data.chartData,
+      chart2: chart
+    }
+    wx.navigateTo({ url: '/pages/compare/compare' })
   },
 
   /**

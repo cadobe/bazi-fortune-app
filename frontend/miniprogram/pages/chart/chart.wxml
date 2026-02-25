@@ -1,0 +1,29 @@
+<view class="container">
+  <view class="page-header">
+    <view class="page-title">我的命盘</view>
+    <button class="btn-new" bindtap="goToNewChart">+ 新建</button>
+  </view>
+
+  <view class="loading-wrap" wx:if="{{isLoading}}">
+    <view class="loading-spinner"></view>
+  </view>
+
+  <view wx:elif="{{charts.length === 0}}" class="empty-state">
+    <view class="empty-icon">🌙</view>
+    <view class="empty-text">暂无命盘记录</view>
+    <view class="empty-sub">点击「新建」开始排盘</view>
+  </view>
+
+  <view wx:else>
+    <view class="card chart-item" wx:for="{{charts}}" wx:key="_id">
+      <view class="chart-info" bindtap="viewChart" data-chart="{{item}}">
+        <view class="chart-name">{{item.name || item.birthInfo.name || '未命名命盘'}}</view>
+        <view class="chart-bazi">{{item.chartData.baziString || item.baziString}}</view>
+        <view class="chart-date">{{item.createdAt || item.createTime}}</view>
+      </view>
+      <view class="chart-actions">
+        <button class="btn-delete" bindtap="deleteChart" data-id="{{item._id || item.id}}">删除</button>
+      </view>
+    </view>
+  </view>
+</view>

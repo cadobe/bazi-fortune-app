@@ -42,14 +42,14 @@ App({
   // 验证token
   validateToken(token) {
     wx.request({
-      url: `${this.globalData.baseUrl}/api/auth/validate`,
-      method: 'POST',
+      url: `${this.globalData.baseUrl}/api/auth/me`,
+      method: 'GET',
       header: {
         'Authorization': `Bearer ${token}`
       },
       success: (res) => {
         if (res.data.success) {
-          this.globalData.userInfo = res.data.userInfo
+          this.globalData.userInfo = res.data.data.user
         } else {
           // token无效，清除本地存储
           wx.removeStorageSync('token')
@@ -69,16 +69,16 @@ App({
           if (res.code) {
             // 发送code到后端
             wx.request({
-              url: `${this.globalData.baseUrl}/api/auth/wxlogin`,
+              url: `${this.globalData.baseUrl}/api/auth/wechat-login`,
               method: 'POST',
               data: { code: res.code },
               success: (loginRes) => {
                 if (loginRes.data.success) {
-                  const { token, userInfo, openid } = loginRes.data.data
+                  const { token, user, openid } = loginRes.data.data
 
                   // 存储到本地
                   wx.setStorageSync('token', token)
-                  this.globalData.userInfo = userInfo
+                  this.globalData.userInfo = user
                   this.globalData.openid = openid
 
                   resolve(loginRes.data.data)

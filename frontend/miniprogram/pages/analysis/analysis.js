@@ -1,4 +1,5 @@
 const app = getApp()
+const { request, ensureLogin } = require('../../utils/api')
 
 Page({
   data: {
@@ -54,26 +55,16 @@ Page({
   onLoad(options) {
     console.log('AI解读页面加载')
 
-    // 获取传入的命盘数据
-    if (options.chartData) {
-      try {
-        const chartData = JSON.parse(decodeURIComponent(options.chartData))
-        this.setData({ chartData })
+    // 优先从 globalData 读取（避免 URL 参数大小限制）
+    const chartData = app.globalData.currentChart || (options.chartData
+      ? (() => { try { return JSON.parse(decodeURIComponent(options.chartData)) } catch (e) { return null } })()
+      : null)
 
-        // 自动开始AI分析
-        this.startAIAnalysis()
-      } catch (error) {
-        console.error('解析命盘数据失败：', error)
-        wx.showToast({
-          title: '数据格式错误',
-          icon: 'none'
-        })
-      }
+    if (chartData) {
+      this.setData({ chartData })
+      this.startAIAnalysis()
     } else {
-      wx.showToast({
-        title: '缺少命盘数据',
-        icon: 'none'
-      })
+      wx.showToast({ title: '缺少命盘数据', icon: 'none' })
     }
   },
 
@@ -85,35 +76,24 @@ Page({
 
     this.setData({ isAnalyzing: true })
 
+    // 未登录则直接使用离线模式，避免 401 错误
+    const loggedIn = await ensureLogin()
+    if (!loggedIn) {
+      const mockResult = this.generateMockAnalysis(this.data.chartData)
+      this.setData({ analysisResult: mockResult, isAnalyzing: false })
+      wx.showToast({ title: '分析完成（离线模式）', icon: 'success' })
+      return
+    }
+
     try {
-      // 调用AI分析接口
       const analysisResult = await this.callAIAnalysis(this.data.chartData)
-
-      this.setData({
-        analysisResult,
-        isAnalyzing: false
-      })
-
-      wx.showToast({
-        title: '分析完成',
-        icon: 'success'
-      })
-
+      this.setData({ analysisResult, isAnalyzing: false })
+      wx.showToast({ title: '分析完成', icon: 'success' })
     } catch (error) {
       console.error('AI分析失败：', error)
-
-      // 使用本地模拟分析
       const mockResult = this.generateMockAnalysis(this.data.chartData)
-
-      this.setData({
-        analysisResult: mockResult,
-        isAnalyzing: false
-      })
-
-      wx.showToast({
-        title: '分析完成（离线模式）',
-        icon: 'success'
-      })
+      this.setData({ analysisResult: mockResult, isAnalyzing: false })
+      wx.showToast({ title: '分析完成（离线模式）', icon: 'success' })
     }
   },
 
@@ -121,28 +101,9 @@ Page({
    * 调用AI分析接口
    */
   async callAIAnalysis(chartData) {
-    return new Promise((resolve, reject) => {
-      wx.request({
-        url: `${app.globalData.baseUrl}/api/ai/analyze`,
-        method: 'POST',
-        header: {
-          'Authorization': `Bearer ${wx.getStorageSync('token')}`,
-          'Content-Type': 'application/json'
-        },
-        data: {
-          chartData,
-          analysisType: 'comprehensive' // 综合分析
-        },
-        timeout: 30000,
-        success: (res) => {
-          if (res.data.success) {
-            resolve(res.data.data)
-          } else {
-            reject(new Error(res.data.message || '分析失败'))
-          }
-        },
-        fail: reject
-      })
+    return await request('/api/ai/analyze', 'POST', {
+      chartData,
+      analysisType: 'comprehensive'
     })
   },
 
@@ -468,30 +429,12 @@ Page({
    * 调用AI问答接口
    */
   async callAIChat(message, chartData) {
-    return new Promise((resolve, reject) => {
-      wx.request({
-        url: `${app.globalData.baseUrl}/api/ai/chat`,
-        method: 'POST',
-        header: {
-          'Authorization': `Bearer ${wx.getStorageSync('token')}`,
-          'Content-Type': 'application/json'
-        },
-        data: {
-          message,
-          chartData,
-          sessionId: wx.getStorageSync('chatSessionId') || Date.now()
-        },
-        timeout: 15000,
-        success: (res) => {
-          if (res.data.success) {
-            resolve(res.data.data.response)
-          } else {
-            reject(new Error(res.data.message || '问答失败'))
-          }
-        },
-        fail: reject
-      })
+    const data = await request('/api/ai/chat', 'POST', {
+      message,
+      chartData,
+      sessionId: wx.getStorageSync('chatSessionId') || String(Date.now())
     })
+    return data.response
   },
 
   /**

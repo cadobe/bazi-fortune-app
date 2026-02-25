@@ -1,0 +1,7 @@
+.container { padding: 30rpx; background: #F5F5DC; min-height: 100vh; }
+.page-title { font-size: 40rpx; font-weight: bold; color: #8B4513; text-align: center; margin-bottom: 40rpx; }
+.card { background: #fff; border-radius: 20rpx; padding: 40rpx; box-shadow: 0 4rpx 20rpx rgba(139,69,19,0.1); }
+.placeholder-card { text-align: center; padding: 100rpx 40rpx; }
+.placeholder-icon { font-size: 80rpx; margin-bottom: 20rpx; }
+.placeholder-text { font-size: 32rpx; color: #8B4513; margin-bottom: 10rpx; }
+.placeholder-sub { font-size: 26rpx; color: #aaa; }

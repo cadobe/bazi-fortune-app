@@ -25,6 +25,12 @@ services:
         generateValue: true
       - key: JWT_EXPIRE
         value: 7d
+      - key: LLM_PROVIDER
+        value: nim_minimax
+      - key: LLM_MODEL
+        value: minimaxai/minimax-m2.1
+      - key: LLM_API_KEY
+        sync: false
 
 databases:
   - name: bazi-mongodb

@@ -4,13 +4,15 @@ const logger = require('../utils/logger');
 class AIService {
   constructor() {
     // Support multiple LLM providers
-    this.provider = process.env.LLM_PROVIDER || 'zhipu'; // 'openai' or 'zhipu'
+    this.provider = process.env.LLM_PROVIDER || 'zhipu'; // 'openai', 'zhipu', or 'nim_minimax'
     this.apiKey = process.env.LLM_API_KEY || process.env.OPENAI_API_KEY;
     this.model = process.env.LLM_MODEL || 'glm-4-flash';
 
     // Set base URL based on provider
     if (this.provider === 'zhipu') {
       this.baseURL = 'https://open.bigmodel.cn/api/paas/v4';
+    } else if (this.provider === 'nim_minimax') {
+      this.baseURL = 'https://integrate.api.nvidia.com/v1';
     } else {
       this.baseURL = process.env.LLM_BASE_URL || 'https://api.openai.com/v1';
     }
@@ -98,14 +100,16 @@ class AIService {
         }
       ],
       temperature: options.temperature || 0.7,
-      top_p: 1
+      top_p: this.provider === 'nim_minimax' ? 0.95 : 1
     };
 
-    // Add max_tokens for OpenAI, not needed for Zhipu GLM
+    // Add max_tokens for OpenAI and NIM providers, not needed for Zhipu GLM
     if (this.provider !== 'zhipu') {
-      requestBody.max_tokens = options.maxTokens || 1000;
-      requestBody.frequency_penalty = 0;
-      requestBody.presence_penalty = 0;
+      requestBody.max_tokens = options.maxTokens || (this.provider === 'nim_minimax' ? 8192 : 1000);
+      if (this.provider !== 'nim_minimax') {
+        requestBody.frequency_penalty = 0;
+        requestBody.presence_penalty = 0;
+      }
     }
 
     const response = await axios.post(`${this.baseURL}/chat/completions`, requestBody, {

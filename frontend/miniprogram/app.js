@@ -2,7 +2,7 @@ App({
   globalData: {
     userInfo: null,
     openid: null,
-    baseUrl: 'https://api.bazifortune.com', // 后端API地址
+    baseUrl: 'https://bazi-fortune-app.onrender.com', // 后端API地址（Render部署）
     currentChart: null, // 当前命盘数据
     theme: 'classic' // 默认主题
   },

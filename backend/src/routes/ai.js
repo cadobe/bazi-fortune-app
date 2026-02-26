@@ -10,7 +10,7 @@ const router = express.Router();
 // @route   POST /api/ai/analyze
 // @desc    Generate AI analysis for a chart
 // @access  Private
-router.post('/analyze', authenticate, [
+router.post('/analyze', optional, [
   body('chartData').notEmpty().withMessage('Chart data is required'),
   body('analysisType').optional().isIn(['comprehensive', 'career', 'relationship', 'health', 'wealth']).withMessage('Invalid analysis type')
 ], async (req, res) => {
@@ -26,32 +26,36 @@ router.post('/analyze', authenticate, [
 
     const { chartData, analysisType = 'comprehensive', focusAreas = [] } = req.body;
 
-    // Check user's analysis quota
-    const userAnalysisCount = await AnalysisSession.countDocuments({
-      user: req.user._id,
-      createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
-    });
-
-    const maxAnalysisPerDay = req.user.subscription.type === 'free' ? 3 :
-                              req.user.subscription.type === 'premium' ? 20 : 100;
-
-    if (userAnalysisCount >= maxAnalysisPerDay) {
-      return res.status(429).json({
-        success: false,
-        message: `Daily analysis limit reached. You can perform ${maxAnalysisPerDay} analyses per day.`
+    // Check user's analysis quota (only for logged-in users)
+    if (req.user) {
+      const userAnalysisCount = await AnalysisSession.countDocuments({
+        user: req.user._id,
+        createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
       });
+
+      const maxAnalysisPerDay = req.user.subscription.type === 'free' ? 3 :
+                                req.user.subscription.type === 'premium' ? 20 : 100;
+
+      if (userAnalysisCount >= maxAnalysisPerDay) {
+        return res.status(429).json({
+          success: false,
+          message: `Daily analysis limit reached. You can perform ${maxAnalysisPerDay} analyses per day.`
+        });
+      }
     }
 
     // Generate analysis using AI service
     const analysisResult = await aiService.generateAnalysis(chartData, {
       analysisType,
       focusAreas,
-      userPreferences: req.user.settings
+      userPreferences: req.user ? req.user.settings : {}
     });
 
-    // Update user stats
-    req.user.stats.analysisRequests += 1;
-    await req.user.save();
+    // Update user stats (only for logged-in users)
+    if (req.user) {
+      req.user.stats.analysisRequests += 1;
+      await req.user.save();
+    }
 
     res.json({
       success: true,
@@ -71,7 +75,7 @@ router.post('/analyze', authenticate, [
 // @route   POST /api/ai/chat
 // @desc    AI chat for chart analysis
 // @access  Private
-router.post('/chat', authenticate, [
+router.post('/chat', optional, [
   body('message').notEmpty().withMessage('Message is required'),
   body('chartData').notEmpty().withMessage('Chart data is required'),
   body('sessionId').optional().isString()
@@ -88,70 +92,69 @@ router.post('/chat', authenticate, [
 
     const { message, chartData, sessionId } = req.body;
 
-    // Find or create analysis session
-    let session = sessionId ? await AnalysisSession.findOne({
-      sessionId,
-      user: req.user._id,
-      isActive: true
-    }) : null;
-
-    if (!session) {
-      // Create new session
-      session = new AnalysisSession({
-        user: req.user._id,
-        chart: chartData.chartId,
-        sessionId: sessionId || `session_${Date.now()}_${req.user._id}`,
-        context: {
-          analysisType: 'chat',
-          focusAreas: []
-        }
-      });
-    }
-
-    // Add user message
-    const userMessage = {
-      id: `msg_${Date.now()}`,
-      type: 'user',
-      content: message,
-      timestamp: new Date()
-    };
-
-    session.messages.push(userMessage);
-
-    // Generate AI response
+    // Generate AI response directly (no session persistence when not logged in)
     const aiResponse = await aiService.generateChatResponse(message, chartData, {
-      sessionHistory: session.messages,
-      userPreferences: req.user.settings
+      sessionHistory: [],
+      userPreferences: req.user ? req.user.settings : {}
     });
 
-    // Add AI message
-    const aiMessage = {
-      id: `msg_${Date.now() + 1}`,
-      type: 'ai',
-      content: aiResponse.content,
-      timestamp: new Date(),
-      metadata: {
-        tokens: aiResponse.tokens,
-        model: aiResponse.model,
-        confidence: aiResponse.confidence
+    // Save session only for logged-in users
+    if (req.user) {
+      let session = sessionId ? await AnalysisSession.findOne({
+        sessionId,
+        user: req.user._id,
+        isActive: true
+      }) : null;
+
+      if (!session) {
+        session = new AnalysisSession({
+          user: req.user._id,
+          chart: chartData.chartId,
+          sessionId: sessionId || `session_${Date.now()}_${req.user._id}`,
+          context: {
+            analysisType: 'chat',
+            focusAreas: []
+          }
+        });
       }
-    };
 
-    session.messages.push(aiMessage);
-    session.stats.messageCount += 2;
-    session.stats.tokensUsed += aiResponse.tokens || 0;
-    session.stats.lastActivity = new Date();
+      const userMessage = {
+        id: `msg_${Date.now()}`,
+        type: 'user',
+        content: message,
+        timestamp: new Date()
+      };
+      session.messages.push(userMessage);
 
-    await session.save();
+      const aiMessage = {
+        id: `msg_${Date.now() + 1}`,
+        type: 'ai',
+        content: aiResponse.content,
+        timestamp: new Date(),
+        metadata: {
+          tokens: aiResponse.tokens,
+          model: aiResponse.model,
+          confidence: aiResponse.confidence
+        }
+      };
+      session.messages.push(aiMessage);
+      session.stats.messageCount += 2;
+      session.stats.tokensUsed += aiResponse.tokens || 0;
+      session.stats.lastActivity = new Date();
+      await session.save();
+    }
 
     res.json({
       success: true,
       message: 'Chat response generated',
       data: {
         response: aiResponse.content,
-        sessionId: session.sessionId,
-        messageId: aiMessage.id,
-        metadata: aiMessage.metadata
+        sessionId: sessionId || '',
+        metadata: {
+          tokens: aiResponse.tokens,
+          model: aiResponse.model,
+          confidence: aiResponse.confidence
+        }
       }
     });
 

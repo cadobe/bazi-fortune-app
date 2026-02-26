@@ -1,8 +1,109 @@
 <view class="container">
   <view class="page-title">八字学习</view>
-  <view class="card placeholder-card">
-    <view class="placeholder-icon">📚</view>
-    <view class="placeholder-text">功能开发中</view>
-    <view class="placeholder-sub">敬请期待</view>
+
+  <!-- 分类标签栏 -->
+  <scroll-view class="category-scroll" scroll-x>
+    <view class="category-tabs">
+      <view class="cat-tab {{activeCategory === item.id ? 'active' : ''}}"
+            wx:for="{{categories}}"
+            wx:key="id"
+            bindtap="switchCategory"
+            data-id="{{item.id}}">
+        {{item.name}}
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 内容区 -->
+  <view class="content-area">
+    <view class="card content-card">
+      <view class="content-title">{{content[activeCategory].title}}</view>
+      <view class="content-desc">{{content[activeCategory].desc}}</view>
+
+      <!-- 天干 -->
+      <block wx:if="{{activeCategory === 'tiangan'}}">
+        <view class="item-list">
+          <view class="tiangan-item" wx:for="{{content.tiangan.items}}" wx:key="name">
+            <view class="tg-char" style="color: {{item.color}}">{{item.name}}</view>
+            <view class="tg-info">
+              <view class="tg-meta">
+                <text class="tg-wuxing" style="color: {{item.color}}">{{item.wuxing}}</text>
+                <text class="tg-yinyang">{{item.yin_yang}}</text>
+              </view>
+              <view class="tg-desc">{{item.desc}}</view>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 地支 -->
+      <block wx:if="{{activeCategory === 'dizhi'}}">
+        <view class="dizhi-grid">
+          <view class="dizhi-item" wx:for="{{content.dizhi.items}}" wx:key="name">
+            <view class="dz-char" style="color: {{item.color}}">{{item.name}}</view>
+            <view class="dz-shengxiao">{{item.shengxiao}}</view>
+            <view class="dz-time">{{item.time}}</view>
+            <view class="dz-wuxing" style="color: {{item.color}}">{{item.wuxing}}</view>
+            <view class="dz-desc">{{item.desc}}</view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 五行 -->
+      <block wx:if="{{activeCategory === 'wuxing'}}">
+        <view class="wuxing-list">
+          <view class="wx-item" wx:for="{{content.wuxing.items}}" wx:key="name">
+            <view class="wx-header">
+              <text class="wx-symbol">{{item.symbol}}</text>
+              <text class="wx-name" style="color: {{item.color}}">{{item.name}}</text>
+              <view class="wx-shengke">
+                <text class="sheng-tag">生{{item.sheng}}</text>
+                <text class="ke-tag">克{{item.ke}}</text>
+              </view>
+            </view>
+            <view class="wx-desc">{{item.desc}}</view>
+            <view class="wx-ganzhi">
+              <text class="gz-label">天干：</text><text>{{item.tiangan}}</text>
+              <text class="gz-label" style="margin-left:20rpx">地支：</text><text>{{item.dizhi}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 十神 -->
+      <block wx:if="{{activeCategory === 'shishen'}}">
+        <view class="shishen-list">
+          <view class="ss-item" wx:for="{{content.shishen.items}}" wx:key="name">
+            <view class="ss-header">
+              <view class="ss-badge ss-{{item.type}}">{{item.abbr}}</view>
+              <view class="ss-name">{{item.name}}</view>
+            </view>
+            <view class="ss-small-desc">{{item.desc}}</view>
+            <view class="ss-detail">{{item.desc}}</view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 大运流年 -->
+      <block wx:if="{{activeCategory === 'dayun'}}">
+        <view class="dayun-list">
+          <view class="dy-item" wx:for="{{content.dayun.items}}" wx:key="name">
+            <view class="dy-title">{{item.name}}</view>
+            <view class="dy-desc">{{item.desc}}</view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 神煞 -->
+      <block wx:if="{{activeCategory === 'shensha'}}">
+        <view class="shensha-grid">
+          <view class="sha-item" wx:for="{{content.shensha.items}}" wx:key="name">
+            <view class="sha-symbol">{{item.symbol}}</view>
+            <view class="sha-name">{{item.name}}</view>
+            <view class="sha-desc">{{item.desc}}</view>
+          </view>
+        </view>
+      </block>
+    </view>
   </view>
 </view>

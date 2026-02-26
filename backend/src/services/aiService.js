@@ -117,11 +117,15 @@ class AIService {
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json'
       },
-      timeout: 30000
+      timeout: 60000
     });
 
+    let content = response.data.choices[0].message.content || '';
+    // Strip <think>...</think> blocks from reasoning models (e.g. MiniMAX-m2.1)
+    content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+
     return {
-      content: response.data.choices[0].message.content,
+      content,
       usage: response.data.usage
     };
   }
@@ -161,27 +165,15 @@ ${shishen.map(s => `${s.position}：${s.name}`).join('\n')}
       case 'comprehensive':
         specificPrompt = `
 请提供全面的命理分析，包括：
-1. 性格特征分析
-2. 事业发展方向
-3. 财运状况
-4. 感情婚姻
-5. 健康状况
+1. 性格特征分析（至少100字）
+2. 事业发展方向（至少80字）
+3. 财运状况（至少80字）
+4. 感情婚姻（至少80字）
+5. 健康状况（至少60字）
 6. 开运建议
 
-请用JSON格式返回，包含以下字段：
-{
-  "personality": "性格分析",
-  "career": "事业分析",
-  "careerTags": ["适合职业1", "适合职业2"],
-  "wealth": "财运分析",
-  "wealthScore": 85,
-  "relationship": "感情分析",
-  "loveScore": 78,
-  "health": "健康分析",
-  "healthTips": ["健康建议1", "健康建议2"],
-  "suggestions": [{"category": "颜色开运", "items": ["建议1", "建议2"]}],
-  "confidence": 88
-}`;
+【重要】你必须严格按照以下JSON格式返回，不要添加任何其他文字说明，直接输出JSON：
+{"personality":"性格分析文本","career":"事业分析文本","careerTags":["职业1","职业2","职业3"],"wealth":"财运分析文本","wealthScore":85,"relationship":"感情分析文本","loveScore":78,"health":"健康分析文本","healthTips":["健康建议1","健康建议2"],"suggestions":[{"category":"颜色开运","items":["建议1","建议2"]},{"category":"方位开运","items":["建议1","建议2"]}],"confidence":88}`;
         break;
 
       case 'career':
@@ -227,19 +219,70 @@ ${historyContext}
    * Parse AI analysis response
    */
   parseAnalysisResponse(response, chartData) {
-    try {
-      // Try to parse JSON response
-      const cleanContent = response.content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-      const parsed = JSON.parse(cleanContent);
+    const content = response.content || '';
 
+    // Step 1: Remove markdown code fences
+    let cleaned = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+    // Step 2: Try direct parse
+    let parsed = this.tryParseJSON(cleaned);
+
+    // Step 3: Extract JSON object from mixed text
+    if (!parsed) {
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) {
+        parsed = this.tryParseJSON(match[0]);
+      }
+    }
+
+    // Step 4: If JSON parsed successfully, merge with defaults and return
+    if (parsed && typeof parsed === 'object') {
       return {
-        ...parsed,
-        confidence: parsed.confidence || 85,
+        personality: parsed.personality || '',
+        career: parsed.career || '',
+        careerTags: Array.isArray(parsed.careerTags) ? parsed.careerTags : [],
+        wealth: parsed.wealth || '',
+        wealthScore: Number(parsed.wealthScore) || 75,
+        relationship: parsed.relationship || '',
+        loveScore: Number(parsed.loveScore) || 75,
+        health: parsed.health || '',
+        healthTips: Array.isArray(parsed.healthTips) ? parsed.healthTips : [],
+        suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
+        confidence: Number(parsed.confidence) || 85,
+        model: this.model,
         timestamp: new Date()
       };
-    } catch (error) {
-      // If not JSON, return structured mock based on content
-      return this.generateMockAnalysis(chartData);
+    }
+
+    // Step 5: LLM returned plain text — wrap it as the analysis content
+    if (content.length > 50) {
+      logger.info('AI returned plain text, wrapping as analysis');
+      return {
+        personality: content,
+        career: '',
+        careerTags: [],
+        wealth: '',
+        wealthScore: 75,
+        relationship: '',
+        loveScore: 75,
+        health: '',
+        healthTips: [],
+        suggestions: [],
+        confidence: 80,
+        model: this.model,
+        timestamp: new Date()
+      };
+    }
+
+    // Step 6: Fallback to mock
+    return this.generateMockAnalysis(chartData);
+  }
+
+  tryParseJSON(str) {
+    try {
+      return JSON.parse(str);
+    } catch (e) {
+      return null;
     }
   }
 

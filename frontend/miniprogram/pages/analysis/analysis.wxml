@@ -30,6 +30,9 @@
         准确度: {{analysisResult.confidence}}%
       </view>
     </view>
+    <view class="model-info" wx:if="{{analysisResult.model}}">
+      <text class="model-label">分析模型：{{analysisResult.model}}</text>
+    </view>
 
     <!-- 基本性格分析 -->
     <view class="analysis-section">
@@ -105,7 +108,7 @@
           <view class="timeline-luck {{item.type}}">{{item.description}}</view>
         </view>
       </view>
-    </div>
+    </view>
 
     <!-- 开运建议 -->
     <view class="analysis-section">

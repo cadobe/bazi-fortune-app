@@ -76,15 +76,6 @@ Page({
 
     this.setData({ isAnalyzing: true })
 
-    // 未登录则直接使用离线模式，避免 401 错误
-    const loggedIn = await ensureLogin()
-    if (!loggedIn) {
-      const mockResult = this.generateMockAnalysis(this.data.chartData)
-      this.setData({ analysisResult: mockResult, isAnalyzing: false })
-      wx.showToast({ title: '分析完成（离线模式）', icon: 'success' })
-      return
-    }
-
     try {
       const analysisResult = await this.callAIAnalysis(this.data.chartData)
       this.setData({ analysisResult, isAnalyzing: false })
@@ -101,9 +92,30 @@ Page({
    * 调用AI分析接口
    */
   async callAIAnalysis(chartData) {
-    return await request('/api/ai/analyze', 'POST', {
-      chartData,
-      analysisType: 'comprehensive'
+    return new Promise((resolve, reject) => {
+      const token = wx.getStorageSync('token')
+      wx.request({
+        url: `${app.globalData.baseUrl}/api/ai/analyze`,
+        method: 'POST',
+        data: {
+          chartData,
+          analysisType: 'comprehensive'
+        },
+        header: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        success: (res) => {
+          if (res.data && res.data.success) {
+            resolve(res.data.data)
+          } else {
+            reject(new Error(res.data && res.data.message ? res.data.message : 'AI分析请求失败'))
+          }
+        },
+        fail: (err) => {
+          reject(new Error(err.errMsg || '网络错误'))
+        }
+      })
     })
   },
 
@@ -132,6 +144,7 @@ Page({
     const weakestElement = wuxingStats[wuxingStats.length - 1]
 
     return {
+      model: '离线模式',
       confidence: Math.floor(Math.random() * 15) + 85, // 85-100的随机数
       personality: personalityMap[dayTiangan] || '您的性格特征需要进一步分析。',
 
@@ -429,12 +442,32 @@ Page({
    * 调用AI问答接口
    */
   async callAIChat(message, chartData) {
-    const data = await request('/api/ai/chat', 'POST', {
-      message,
-      chartData,
-      sessionId: wx.getStorageSync('chatSessionId') || String(Date.now())
+    return new Promise((resolve, reject) => {
+      const token = wx.getStorageSync('token')
+      wx.request({
+        url: `${app.globalData.baseUrl}/api/ai/chat`,
+        method: 'POST',
+        data: {
+          message,
+          chartData,
+          sessionId: wx.getStorageSync('chatSessionId') || String(Date.now())
+        },
+        header: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        success: (res) => {
+          if (res.data && res.data.success) {
+            resolve(res.data.data.response)
+          } else {
+            reject(new Error(res.data && res.data.message ? res.data.message : 'AI问答请求失败'))
+          }
+        },
+        fail: (err) => {
+          reject(new Error(err.errMsg || '网络错误'))
+        }
+      })
     })
-    return data.response
   },
 
   /**

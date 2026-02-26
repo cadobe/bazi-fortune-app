@@ -1,8 +1,93 @@
 <view class="container">
-  <view class="page-title">黄历</view>
-  <view class="card placeholder-card">
-    <view class="placeholder-icon">🗓️</view>
-    <view class="placeholder-text">功能开发中</view>
-    <view class="placeholder-sub">敬请期待</view>
+  <!-- 月份导航 -->
+  <view class="month-nav">
+    <view class="nav-btn" bindtap="prevMonth">‹</view>
+    <view class="month-title">{{currentYear}}年{{currentMonth}}月</view>
+    <view class="nav-btn" bindtap="nextMonth">›</view>
+    <view class="today-btn" bindtap="goToday">今天</view>
+  </view>
+
+  <!-- 日历 -->
+  <view class="card calendar-card">
+    <!-- 星期头 -->
+    <view class="week-header">
+      <view class="week-cell sun">日</view>
+      <view class="week-cell">一</view>
+      <view class="week-cell">二</view>
+      <view class="week-cell">三</view>
+      <view class="week-cell">四</view>
+      <view class="week-cell">五</view>
+      <view class="week-cell sat">六</view>
+    </view>
+    <!-- 日期格子 -->
+    <view class="week-row" wx:for="{{calendarWeeks}}" wx:key="index" wx:for-item="week">
+      <view class="day-cell {{cell ? '' : 'empty'}} {{cell && cell.isToday ? 'today' : ''}} {{cell && cell.isSelected ? 'selected' : ''}}"
+            wx:for="{{week}}"
+            wx:for-item="cell"
+            wx:key="index"
+            bindtap="selectDay"
+            data-day="{{cell ? cell.day : 0}}">
+        <view wx:if="{{cell}}">
+          <view class="day-num">{{cell.day}}</view>
+          <view class="day-lunar {{cell.isTerm ? 'term' : ''}}">{{cell.lunarDay}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 今日详情 -->
+  <view class="card detail-card" wx:if="{{selectedDate.day}}">
+    <view class="detail-header">
+      <view class="detail-date">
+        <text class="detail-day">{{selectedDate.day}}</text>
+        <view class="detail-meta">
+          <text>{{currentYear}}年{{currentMonth}}月 星期{{selectedDate.weekDay}}</text>
+          <text wx:if="{{solarTerm}}" class="term-badge">{{solarTerm}}</text>
+        </view>
+      </view>
+      <view class="detail-lunar">
+        <text class="lunar-text">农历{{lunarDate.month}}{{lunarDate.day}}</text>
+        <text class="shengxiao-text">{{ganzhi.shengxiao}}年</text>
+      </view>
+    </view>
+
+    <!-- 干支信息 -->
+    <view class="ganzhi-row">
+      <view class="gz-pill">
+        <text class="gz-label">年</text>
+        <text class="gz-val">{{ganzhi.yearGanzhi}}</text>
+      </view>
+      <view class="gz-pill">
+        <text class="gz-label">月</text>
+        <text class="gz-val">{{ganzhi.monthGanzhi}}</text>
+      </view>
+      <view class="gz-pill">
+        <text class="gz-label">日</text>
+        <text class="gz-val">{{ganzhi.dayGanzhi}}</text>
+      </view>
+    </view>
+
+    <!-- 冲煞 -->
+    <view class="chong-row" wx:if="{{chong}}">
+      <text class="chong-label">冲</text>
+      <text class="chong-val">{{chong}}</text>
+      <text class="chong-tip">属{{chong}}者今日冲煞，宜低调行事</text>
+    </view>
+
+    <!-- 宜 -->
+    <view class="yiji-section">
+      <view class="yi-title">宜</view>
+      <view class="yi-tags">
+        <text class="yi-tag" wx:for="{{yi}}" wx:key="index">{{item}}</text>
+      </view>
+    </view>
+
+    <!-- 忌 -->
+    <view class="yiji-section">
+      <view class="ji-title">忌</view>
+      <view class="ji-tags">
+        <text class="ji-tag" wx:for="{{ji}}" wx:key="index">{{item}}</text>
+      </view>
+    </view>
   </view>
 </view>

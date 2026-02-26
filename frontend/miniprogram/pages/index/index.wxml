@@ -82,6 +82,8 @@
       <view class="input-label">出生地区</view>
       <picker mode="multiSelector"
               range="{{regionData}}"
+              value="{{regionIndex}}"
+              bindcolumnchange="onRegionColumnChange"
               bindchange="onRegionChange"
               class="region-picker">
         <view class="picker-display">

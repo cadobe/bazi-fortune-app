@@ -173,8 +173,9 @@ class BaziCalculator {
    * @returns {object} 日柱信息
    */
   getDayPillar(year, month, day) {
-    // 使用公历积日法计算
-    const baseDate = new Date(1900, 0, 1) // 1900年1月1日为甲戌日
+    // 使用公历积日法计算日柱
+    // 基准：1900年1月1日为甲戌日（天干index=0 甲，地支index=10 戌）
+    const baseDate = new Date(1900, 0, 1)
     const currentDate = new Date(year, month - 1, day)
     const daysDiff = Math.floor((currentDate - baseDate) / (1000 * 60 * 60 * 24))
 
@@ -182,8 +183,9 @@ class BaziCalculator {
     const baseTianganIndex = 0 // 甲
     const baseDizhiIndex = 10 // 戌
 
-    const tianganIndex = (baseTianganIndex + daysDiff) % 10
-    const dizhiIndex = (baseDizhiIndex + daysDiff) % 12
+    // 使用正模运算，防止 daysDiff 为负数时取余结果为负
+    const tianganIndex = ((baseTianganIndex + daysDiff) % 10 + 10) % 10
+    const dizhiIndex = ((baseDizhiIndex + daysDiff) % 12 + 12) % 12
 
     return {
       tiangan: TIANGAN[tianganIndex],
@@ -436,14 +438,4 @@ class BaziCalculator {
   }
 }
 
-// 导出
 module.exports = BaziCalculator
-
-// 小程序环境导出
-if (typeof module === 'undefined') {
-  // 小程序环境
-  const baziCalculator = new BaziCalculator()
-
-  global.BaziCalculator = BaziCalculator
-  global.baziCalculator = baziCalculator
-}

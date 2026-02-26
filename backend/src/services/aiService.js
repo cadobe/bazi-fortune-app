@@ -25,20 +25,37 @@ class AIService {
     try {
       const { analysisType = 'comprehensive', focusAreas = [], userPreferences = {} } = options;
 
+      logger.info('[AI Service] generateAnalysis started', {
+        analysisType,
+        baziString: chartData.baziString || 'N/A',
+        dayTiangan: chartData.dayTiangan || 'N/A',
+        focusAreas
+      });
+
       // Build analysis prompt
       const prompt = this.buildAnalysisPrompt(chartData, analysisType, focusAreas);
 
       // Call OpenAI API
+      const startTime = Date.now();
       const response = await this.callOpenAI(prompt, {
         temperature: 0.7,
         maxTokens: 2000
+      });
+      const elapsed = Date.now() - startTime;
+
+      logger.info('[AI Service] generateAnalysis LLM call completed', {
+        analysisType,
+        elapsedMs: elapsed
       });
 
       // Parse and structure the response
       return this.parseAnalysisResponse(response, chartData);
 
     } catch (error) {
-      logger.error('AI analysis generation failed:', error);
+      logger.error('[AI Service] generateAnalysis failed, falling back to mock', {
+        errorMessage: error.message,
+        errorStack: error.stack
+      });
 
       // Fallback to local mock analysis
       return this.generateMockAnalysis(chartData, options);
@@ -49,14 +66,28 @@ class AIService {
    * Generate chat response for interactive analysis
    */
   async generateChatResponse(message, chartData, options = {}) {
+    const messageSummary = message && message.length > 50 ? message.substring(0, 50) + '...' : message;
+    logger.info('[AI Service] generateChatResponse started', {
+      messageSummary,
+      baziString: chartData.baziString || 'N/A'
+    });
+
     try {
       const { sessionHistory = [], userPreferences = {} } = options;
 
       const prompt = this.buildChatPrompt(message, chartData, sessionHistory);
 
+      const startTime = Date.now();
       const response = await this.callOpenAI(prompt, {
         temperature: 0.8,
         maxTokens: 800
+      });
+      const elapsed = Date.now() - startTime;
+
+      logger.info('[AI Service] generateChatResponse succeeded', {
+        elapsedMs: elapsed,
+        responseLength: response.content ? response.content.length : 0,
+        tokens: response.usage?.total_tokens || 0
       });
 
       return {
@@ -67,7 +98,10 @@ class AIService {
       };
 
     } catch (error) {
-      logger.error('AI chat response failed:', error);
+      logger.error('[AI Service] generateChatResponse failed, falling back to mock', {
+        messageSummary,
+        errorMessage: error.message
+      });
 
       // Fallback to mock response
       return {
@@ -86,6 +120,15 @@ class AIService {
     if (!this.apiKey) {
       throw new Error(`${this.provider} API key not configured`);
     }
+
+    logger.info('[AI Service] callOpenAI request', {
+      provider: this.provider,
+      model: this.model,
+      baseURL: this.baseURL,
+      promptLength: prompt ? prompt.length : 0,
+      temperature: options.temperature || 0.7,
+      maxTokens: options.maxTokens || 1000
+    });
 
     const requestBody = {
       model: this.model,
@@ -112,12 +155,41 @@ class AIService {
       }
     }
 
-    const response = await axios.post(`${this.baseURL}/chat/completions`, requestBody, {
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 60000
+    const startTime = Date.now();
+    let response;
+    try {
+      response = await axios.post(`${this.baseURL}/chat/completions`, requestBody, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 60000
+      });
+    } catch (error) {
+      const elapsed = Date.now() - startTime;
+      const status = error.response ? error.response.status : 'N/A';
+      const errorData = error.response ? error.response.data : null;
+      logger.error('[AI Service] callOpenAI request failed', {
+        provider: this.provider,
+        model: this.model,
+        elapsedMs: elapsed,
+        httpStatus: status,
+        errorMessage: error.message,
+        errorData: errorData
+      });
+      throw error;
+    }
+
+    const elapsed = Date.now() - startTime;
+    const usage = response.data.usage || {};
+    logger.info('[AI Service] callOpenAI response received', {
+      provider: this.provider,
+      model: this.model,
+      elapsedMs: elapsed,
+      promptTokens: usage.prompt_tokens || 0,
+      completionTokens: usage.completion_tokens || 0,
+      totalTokens: usage.total_tokens || 0,
+      responseContentLength: (response.data.choices[0].message.content || '').length
     });
 
     let content = response.data.choices[0].message.content || '';
@@ -227,11 +299,22 @@ ${historyContext}
     // Step 2: Try direct parse
     let parsed = this.tryParseJSON(cleaned);
 
+    if (parsed) {
+      logger.info('[AI Service] parseAnalysisResponse: JSON direct parse succeeded', {
+        contentLength: content.length
+      });
+    }
+
     // Step 3: Extract JSON object from mixed text
     if (!parsed) {
       const match = cleaned.match(/\{[\s\S]*\}/);
       if (match) {
         parsed = this.tryParseJSON(match[0]);
+        if (parsed) {
+          logger.info('[AI Service] parseAnalysisResponse: JSON extracted via regex', {
+            contentLength: content.length
+          });
+        }
       }
     }
 
@@ -256,7 +339,9 @@ ${historyContext}
 
     // Step 5: LLM returned plain text — wrap it as the analysis content
     if (content.length > 50) {
-      logger.info('AI returned plain text, wrapping as analysis');
+      logger.warn('[AI Service] parseAnalysisResponse: JSON parse failed, wrapping plain text as analysis', {
+        contentLength: content.length
+      });
       return {
         personality: content,
         career: '',
@@ -275,6 +360,9 @@ ${historyContext}
     }
 
     // Step 6: Fallback to mock
+    logger.warn('[AI Service] parseAnalysisResponse: all parsing strategies failed, falling back to mock', {
+      contentLength: content.length
+    });
     return this.generateMockAnalysis(chartData);
   }
 
@@ -290,6 +378,11 @@ ${historyContext}
    * Generate mock analysis (fallback)
    */
   generateMockAnalysis(chartData, options = {}) {
+    logger.warn('[AI Service] generateMockAnalysis: using mock fallback for analysis', {
+      dayTiangan: chartData.dayTiangan || 'N/A',
+      baziString: chartData.baziString || 'N/A'
+    });
+
     const { dayTiangan, wuxingStats, birthInfo } = chartData;
 
     const personalityMap = {

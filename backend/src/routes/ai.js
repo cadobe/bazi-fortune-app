@@ -4,6 +4,7 @@ const { authenticate, optional } = require('../middleware/auth');
 const Chart = require('../models/Chart');
 const AnalysisSession = require('../models/AnalysisSession');
 const aiService = require('../services/aiService');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -15,6 +16,7 @@ router.post('/analyze', optional, [
   body('analysisType').optional().isIn(['comprehensive', 'career', 'relationship', 'health', 'wealth']).withMessage('Invalid analysis type')
 ], async (req, res) => {
   try {
+    const startTime = Date.now();
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -25,6 +27,12 @@ router.post('/analyze', optional, [
     }
 
     const { chartData, analysisType = 'comprehensive', focusAreas = [] } = req.body;
+
+    logger.info('[AI Route] /api/ai/analyze request received', {
+      analysisType,
+      isLoggedIn: !!req.user,
+      userId: req.user ? req.user._id : 'anonymous'
+    });
 
     // Check user's analysis quota (only for logged-in users)
     if (req.user) {
@@ -37,6 +45,11 @@ router.post('/analyze', optional, [
                                 req.user.subscription.type === 'premium' ? 20 : 100;
 
       if (userAnalysisCount >= maxAnalysisPerDay) {
+        logger.warn('[AI Route] /api/ai/analyze daily limit reached', {
+          userId: req.user._id,
+          userAnalysisCount,
+          maxAnalysisPerDay
+        });
         return res.status(429).json({
           success: false,
           message: `Daily analysis limit reached. You can perform ${maxAnalysisPerDay} analyses per day.`
@@ -57,6 +70,13 @@ router.post('/analyze', optional, [
       await req.user.save();
     }
 
+    const elapsed = Date.now() - startTime;
+    logger.info('[AI Route] /api/ai/analyze completed', {
+      analysisType,
+      elapsedMs: elapsed,
+      isLoggedIn: !!req.user
+    });
+
     res.json({
       success: true,
       message: 'Analysis generated successfully',
@@ -64,7 +84,10 @@ router.post('/analyze', optional, [
     });
 
   } catch (error) {
-    console.error('AI analysis error:', error);
+    logger.error('[AI Route] /api/ai/analyze error', {
+      errorMessage: error.message,
+      errorStack: error.stack
+    });
     res.status(500).json({
       success: false,
       message: error.message || 'Server error during analysis'
@@ -81,6 +104,7 @@ router.post('/chat', optional, [
   body('sessionId').optional().isString()
 ], async (req, res) => {
   try {
+    const startTime = Date.now();
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -91,6 +115,13 @@ router.post('/chat', optional, [
     }
 
     const { message, chartData, sessionId } = req.body;
+    const messageSummary = message && message.length > 50 ? message.substring(0, 50) + '...' : message;
+
+    logger.info('[AI Route] /api/ai/chat request received', {
+      messageSummary,
+      isLoggedIn: !!req.user,
+      hasSessionId: !!sessionId
+    });
 
     // Generate AI response directly (no session persistence when not logged in)
     const aiResponse = await aiService.generateChatResponse(message, chartData, {
@@ -144,6 +175,13 @@ router.post('/chat', optional, [
       await session.save();
     }
 
+    const elapsed = Date.now() - startTime;
+    logger.info('[AI Route] /api/ai/chat completed', {
+      elapsedMs: elapsed,
+      model: aiResponse.model,
+      tokens: aiResponse.tokens
+    });
+
     res.json({
       success: true,
       message: 'Chat response generated',
@@ -159,7 +197,10 @@ router.post('/chat', optional, [
     });
 
   } catch (error) {
-    console.error('AI chat error:', error);
+    logger.error('[AI Route] /api/ai/chat error', {
+      errorMessage: error.message,
+      errorStack: error.stack
+    });
     res.status(500).json({
       success: false,
       message: error.message || 'Server error during chat'

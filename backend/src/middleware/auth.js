@@ -66,8 +66,14 @@ const authorize = (...roles) => {
 
 const optional = async (req, res, next) => {
   const authHeader = req.header('Authorization');
+  const hasToken = !!(authHeader && authHeader.startsWith('Bearer '));
 
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  logger.info('[Auth] optional middleware', {
+    hasToken,
+    path: req.originalUrl
+  });
+
+  if (hasToken) {
     const token = authHeader.substring(7);
 
     try {
@@ -76,10 +82,21 @@ const optional = async (req, res, next) => {
 
       if (user && user.isActive) {
         req.user = user;
+        logger.info('[Auth] optional token verified successfully', {
+          userId: user._id,
+          path: req.originalUrl
+        });
+      } else {
+        logger.warn('[Auth] optional token valid but user not found or inactive', {
+          path: req.originalUrl
+        });
       }
     } catch (error) {
       // Ignore token errors in optional auth
-      logger.debug('Optional authentication failed:', error);
+      logger.warn('[Auth] optional token verification failed', {
+        errorMessage: error.message,
+        path: req.originalUrl
+      });
     }
   }
 

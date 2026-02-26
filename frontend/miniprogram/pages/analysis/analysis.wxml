@@ -22,6 +22,20 @@
     </view>
   </view>
 
+  <!-- AI分析等待中 -->
+  <view class="card loading-card fade-in" wx:if="{{isAnalyzing}}">
+    <view class="ai-loading-inline">
+      <view class="ai-brain">🔮</view>
+      <view class="loading-dots">
+        <view class="dot"></view>
+        <view class="dot"></view>
+        <view class="dot"></view>
+      </view>
+      <text class="loading-text">超级AI大模型算命中...</text>
+      <text class="loading-subtext">正在为您深度解析命盘，请耐心等待</text>
+    </view>
+  </view>
+
   <!-- AI解读结果 -->
   <view class="card analysis-card fade-in" wx:if="{{analysisResult}}">
     <view class="section-title">
@@ -34,97 +48,125 @@
       <text class="model-label">分析模型：{{analysisResult.model}}</text>
     </view>
 
-    <!-- 基本性格分析 -->
+    <!-- 基本性格分析（免费预览，限3行） -->
     <view class="analysis-section">
       <view class="subsection-title">基本性格特质</view>
-      <view class="analysis-content">
+      <view class="analysis-content" wx:if="{{isPaid}}">
+        <text>{{analysisResult.personality}}</text>
+      </view>
+      <view class="analysis-content preview-clamp" wx:if="{{!isPaid}}">
         <text>{{analysisResult.personality}}</text>
       </view>
     </view>
 
-    <!-- 事业分析 -->
-    <view class="analysis-section">
+    <!-- 事业分析（免费预览，限3行） -->
+    <view class="analysis-section" wx:if="{{!isPaid}}">
       <view class="subsection-title">事业运势</view>
-      <view class="analysis-content">
+      <view class="analysis-content preview-clamp">
         <text>{{analysisResult.career}}</text>
       </view>
-      <view class="tags">
-        <view class="tag tag-info" wx:for="{{analysisResult.careerTags}}" wx:key="*this">
-          {{item}}
+    </view>
+
+    <!-- 付费墙 -->
+    <view class="paywall" wx:if="{{!isPaid}}">
+      <view class="paywall-overlay">
+        <view class="paywall-icon">🔒</view>
+        <view class="paywall-title">解锁完整报告</view>
+        <view class="paywall-desc">包含财运、感情、健康、运势趋势、开运建议等完整分析</view>
+        <view class="paywall-price">
+          <text class="price-original">¥29.9</text>
+          <text class="price-current">¥9.9</text>
         </view>
+        <button class="btn-primary paywall-btn" bindtap="unlockReport">立即解锁</button>
       </view>
     </view>
 
-    <!-- 财运分析 -->
-    <view class="analysis-section">
-      <view class="subsection-title">财运状况</view>
-      <view class="analysis-content">
-        <text>{{analysisResult.wealth}}</text>
-      </view>
-      <view class="fortune-meter">
-        <view class="meter-label">财运指数</view>
-        <view class="meter-bar">
-          <view class="meter-fill" style="width: {{analysisResult.wealthScore}}%"></view>
+    <!-- 以下内容需付费解锁 -->
+    <block wx:if="{{isPaid}}">
+      <!-- 事业分析（完整版） -->
+      <view class="analysis-section">
+        <view class="subsection-title">事业运势</view>
+        <view class="analysis-content">
+          <text>{{analysisResult.career}}</text>
         </view>
-        <view class="meter-score">{{analysisResult.wealthScore}}/100</view>
-      </view>
-    </view>
-
-    <!-- 感情分析 -->
-    <view class="analysis-section">
-      <view class="subsection-title">感情运势</view>
-      <view class="analysis-content">
-        <text>{{analysisResult.relationship}}</text>
-      </view>
-      <view class="fortune-meter">
-        <view class="meter-label">桃花指数</view>
-        <view class="meter-bar">
-          <view class="meter-fill" style="width: {{analysisResult.loveScore}}%"></view>
-        </view>
-        <view class="meter-score">{{analysisResult.loveScore}}/100</view>
-      </view>
-    </view>
-
-    <!-- 健康分析 -->
-    <view class="analysis-section">
-      <view class="subsection-title">健康状况</view>
-      <view class="analysis-content">
-        <text>{{analysisResult.health}}</text>
-      </view>
-      <view class="health-tips">
-        <view class="tip-item" wx:for="{{analysisResult.healthTips}}" wx:key="*this">
-          <text class="tip-icon">💡</text>
-          <text class="tip-text">{{item}}</text>
+        <view class="tags">
+          <view class="tag tag-info" wx:for="{{analysisResult.careerTags}}" wx:key="*this">
+            {{item}}
+          </view>
         </view>
       </view>
-    </view>
 
-    <!-- 大运流年 -->
-    <view class="analysis-section">
-      <view class="subsection-title">运势趋势</view>
-      <view class="luck-timeline">
-        <view class="timeline-item" wx:for="{{analysisResult.luckPeriods}}" wx:key="age">
-          <view class="timeline-age">{{item.age}}岁</view>
-          <view class="timeline-luck {{item.type}}">{{item.description}}</view>
+      <!-- 财运分析 -->
+      <view class="analysis-section">
+        <view class="subsection-title">财运状况</view>
+        <view class="analysis-content">
+          <text>{{analysisResult.wealth}}</text>
+        </view>
+        <view class="fortune-meter">
+          <view class="meter-label">财运指数</view>
+          <view class="meter-bar">
+            <view class="meter-fill" style="width: {{analysisResult.wealthScore}}%"></view>
+          </view>
+          <view class="meter-score">{{analysisResult.wealthScore}}/100</view>
         </view>
       </view>
-    </view>
 
-    <!-- 开运建议 -->
-    <view class="analysis-section">
-      <view class="subsection-title">开运建议</view>
-      <view class="suggestions">
-        <view class="suggestion-category" wx:for="{{analysisResult.suggestions}}" wx:key="category">
-          <view class="category-title">{{item.category}}</view>
-          <view class="suggestion-list">
-            <view class="suggestion-item" wx:for="{{item.items}}" wx:for-item="suggestion" wx:key="*this">
-              <text class="suggestion-icon">✨</text>
-              <text class="suggestion-text">{{suggestion}}</text>
+      <!-- 感情分析 -->
+      <view class="analysis-section">
+        <view class="subsection-title">感情运势</view>
+        <view class="analysis-content">
+          <text>{{analysisResult.relationship}}</text>
+        </view>
+        <view class="fortune-meter">
+          <view class="meter-label">桃花指数</view>
+          <view class="meter-bar">
+            <view class="meter-fill" style="width: {{analysisResult.loveScore}}%"></view>
+          </view>
+          <view class="meter-score">{{analysisResult.loveScore}}/100</view>
+        </view>
+      </view>
+
+      <!-- 健康分析 -->
+      <view class="analysis-section">
+        <view class="subsection-title">健康状况</view>
+        <view class="analysis-content">
+          <text>{{analysisResult.health}}</text>
+        </view>
+        <view class="health-tips">
+          <view class="tip-item" wx:for="{{analysisResult.healthTips}}" wx:key="*this">
+            <text class="tip-icon">💡</text>
+            <text class="tip-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 大运流年 -->
+      <view class="analysis-section">
+        <view class="subsection-title">运势趋势</view>
+        <view class="luck-timeline">
+          <view class="timeline-item" wx:for="{{analysisResult.luckPeriods}}" wx:key="age">
+            <view class="timeline-age">{{item.age}}岁</view>
+            <view class="timeline-luck {{item.type}}">{{item.description}}</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 开运建议 -->
+      <view class="analysis-section">
+        <view class="subsection-title">开运建议</view>
+        <view class="suggestions">
+          <view class="suggestion-category" wx:for="{{analysisResult.suggestions}}" wx:key="category">
+            <view class="category-title">{{item.category}}</view>
+            <view class="suggestion-list">
+              <view class="suggestion-item" wx:for="{{item.items}}" wx:for-item="suggestion" wx:key="*this">
+                <text class="suggestion-icon">✨</text>
+                <text class="suggestion-text">{{suggestion}}</text>
+              </view>
             </view>
           </view>
         </view>
       </view>
-    </view>
+    </block>
   </view>
 
   <!-- AI问答聊天 -->
@@ -215,21 +257,5 @@
     <button class="btn-primary" bindtap="saveAnalysis">
       保存报告
     </button>
-  </view>
-</view>
-
-<!-- 加载遮罩 -->
-<view class="loading-mask" wx:if="{{isAnalyzing}}">
-  <view class="loading-content">
-    <view class="ai-loading">
-      <view class="ai-brain">🧠</view>
-      <view class="loading-dots">
-        <view class="dot"></view>
-        <view class="dot"></view>
-        <view class="dot"></view>
-      </view>
-    </view>
-    <text class="loading-text">AI正在深度分析中...</text>
-    <text class="loading-subtext">请稍候，这可能需要几秒钟</text>
   </view>
 </view>

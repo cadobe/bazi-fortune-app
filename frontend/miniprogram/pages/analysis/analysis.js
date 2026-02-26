@@ -9,6 +9,7 @@ Page({
     inputText: '',
     isSending: false,
     isAnalyzing: false,
+    isPaid: false, // 是否已付费解锁完整报告
 
     // 快速问题
     quickQuestions: [
@@ -571,6 +572,91 @@ Page({
         icon: 'none'
       })
     }
+  },
+
+  /**
+   * 解锁完整报告（微信支付）
+   */
+  unlockReport() {
+    const token = wx.getStorageSync('token')
+    if (!token) {
+      // 未登录，先自动登录
+      wx.showLoading({ title: '登录中...' })
+      app.wxLogin().then(() => {
+        wx.hideLoading()
+        this.unlockReport()
+      }).catch(() => {
+        wx.hideLoading()
+        wx.showToast({ title: '请先登录', icon: 'none' })
+      })
+      return
+    }
+
+    wx.showLoading({ title: '创建订单...' })
+
+    wx.request({
+      url: `${app.globalData.baseUrl}/api/payment/create-order`,
+      method: 'POST',
+      data: {
+        productType: 'full_report',
+        productId: this.data.chartData ? (this.data.chartData.id || 'default') : 'default',
+        productName: 'AI命理完整报告',
+        amount: 990
+      },
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      success: (res) => {
+        wx.hideLoading()
+        if (res.data && res.data.success) {
+          const { payParams, orderId } = res.data.data
+          // 调起微信支付
+          wx.requestPayment({
+            ...payParams,
+            success: () => {
+              this.setData({ isPaid: true })
+              wx.showToast({ title: '解锁成功', icon: 'success' })
+            },
+            fail: (err) => {
+              if (err.errMsg !== 'requestPayment:fail cancel') {
+                wx.showToast({ title: '支付失败', icon: 'none' })
+              }
+              // 轮询检查支付状态（用户可能已支付但回调未到）
+              this.checkPaymentStatus(orderId)
+            }
+          })
+        } else {
+          wx.showToast({ title: res.data.message || '创建订单失败', icon: 'none' })
+        }
+      },
+      fail: () => {
+        wx.hideLoading()
+        wx.showToast({ title: '网络错误', icon: 'none' })
+      }
+    })
+  },
+
+  /**
+   * 检查支付状态
+   */
+  checkPaymentStatus(orderId) {
+    const token = wx.getStorageSync('token')
+    if (!token || !orderId) return
+
+    setTimeout(() => {
+      wx.request({
+        url: `${app.globalData.baseUrl}/api/payment/status/${orderId}`,
+        method: 'GET',
+        header: { 'Authorization': `Bearer ${token}` },
+        success: (res) => {
+          if (res.data && res.data.success && res.data.data.status === 'paid') {
+            this.setData({ isPaid: true })
+            wx.showToast({ title: '支付已确认', icon: 'success' })
+          }
+        }
+      })
+    }, 3000)
   },
 
   /**

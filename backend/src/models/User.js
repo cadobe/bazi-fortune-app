@@ -40,8 +40,9 @@ const userSchema = new mongoose.Schema({
 
   // WeChat integration
   wechat: {
-    openid: String,
+    openid: { type: String, index: true, sparse: true },
     unionid: String,
+    sessionKey: String,  // WeChat session_key (encrypted, for decrypting user data)
     nickname: String,
     avatarUrl: String
   },
@@ -79,6 +80,14 @@ const userSchema = new mongoose.Schema({
     expiresAt: Date,
     features: [String]
   },
+
+  // Paid report unlocks (stores chart/analysis IDs the user has paid for)
+  paidReports: [{
+    orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' },
+    productType: String,
+    productId: String,
+    paidAt: { type: Date, default: Date.now }
+  }],
 
   // Usage stats
   stats: {
@@ -119,10 +128,13 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Remove password from JSON output
+// Remove sensitive fields from JSON output
 userSchema.methods.toJSON = function() {
   const user = this.toObject();
   delete user.password;
+  if (user.wechat) {
+    delete user.wechat.sessionKey;
+  }
   return user;
 };
 

@@ -1,5 +1,84 @@
 /* AI解读页面样式 */
 
+/* 付费墙 */
+.paywall {
+  position: relative;
+  margin: 30rpx 0;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.paywall-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  background: linear-gradient(180deg, #fff8f0, #fff);
+  border: 2rpx dashed #d4a574;
+  border-radius: 16rpx;
+}
+
+.paywall-icon {
+  font-size: 64rpx;
+  margin-bottom: 16rpx;
+}
+
+.paywall-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.paywall-desc {
+  font-size: 24rpx;
+  color: #888;
+  text-align: center;
+  padding: 0 40rpx;
+  margin-bottom: 20rpx;
+}
+
+.paywall-price {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.price-original {
+  font-size: 26rpx;
+  color: #bbb;
+  text-decoration: line-through;
+}
+
+.price-current {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #e53935;
+}
+
+.paywall-btn {
+  min-width: 300rpx;
+}
+
+/* 免费预览限制3行 */
+.preview-clamp {
+  max-height: 130rpx;
+  overflow: hidden;
+  position: relative;
+}
+
+.preview-clamp::after {
+  content: '...';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding-left: 40rpx;
+  background: linear-gradient(to right, transparent, #fff 50%);
+  color: #999;
+}
+
 .model-info {
   background: linear-gradient(135deg, #e8f0fe, #f0e6ff);
   border-radius: 8rpx;
@@ -285,7 +364,37 @@
   background: #ccc;
 }
 
-/* 加载遮罩 */
+/* AI分析等待卡片 */
+.loading-card {
+  text-align: center;
+  padding: 60rpx 30rpx;
+}
+
+.ai-loading-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ai-loading-inline .ai-brain {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.ai-loading-inline .loading-text {
+  font-size: 32rpx;
+  color: #8B4513;
+  font-weight: bold;
+  margin-top: 20rpx;
+}
+
+.ai-loading-inline .loading-subtext {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+}
+
+/* 加载遮罩（保留给其他场景） */
 .loading-mask {
   position: fixed;
   top: 0;

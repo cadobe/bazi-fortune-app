@@ -4,6 +4,7 @@ const axios = require('axios');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -70,7 +71,7 @@ router.post('/register', [
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error('[Auth] Registration error', { message: error.message, stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Server error during registration'
@@ -136,7 +137,7 @@ router.post('/login', [
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('[Auth] Login error', { message: error.message, stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Server error during login'
@@ -147,82 +148,124 @@ router.post('/login', [
 // @route   POST /api/auth/wechat-login
 // @desc    WeChat mini-program login
 // @access  Public
-router.post('/wechat-login', async (req, res) => {
+router.post('/wechat-login', [
+  body('code').notEmpty().withMessage('WeChat code is required')
+], async (req, res) => {
   try {
-    const { code, userInfo } = req.body;
-
-    if (!code) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'WeChat code is required'
+        message: 'Validation errors',
+        errors: errors.array()
       });
     }
 
-    // Call WeChat jscode2session API if credentials are configured, otherwise use mock
-    let openid;
-    if (process.env.WECHAT_APPID && process.env.WECHAT_APP_SECRET) {
+    const { code, userInfo } = req.body;
+
+    // Exchange code for openid and session_key via WeChat API
+    let openid, sessionKey, unionid;
+
+    const appId = process.env.WECHAT_APP_ID || process.env.WECHAT_APPID;
+    const appSecret = process.env.WECHAT_APP_SECRET;
+
+    if (appId && appSecret) {
+      logger.info('[WeChat Login] Exchanging code with WeChat API');
+
       const wxRes = await axios.get('https://api.weixin.qq.com/sns/jscode2session', {
         params: {
-          appid: process.env.WECHAT_APPID,
-          secret: process.env.WECHAT_APP_SECRET,
+          appid: appId,
+          secret: appSecret,
           js_code: code,
           grant_type: 'authorization_code'
         },
         timeout: 5000
       });
+
       if (wxRes.data.errcode) {
+        logger.error('[WeChat Login] WeChat API error', {
+          errcode: wxRes.data.errcode,
+          errmsg: wxRes.data.errmsg
+        });
         return res.status(400).json({
           success: false,
-          message: `微信登录失败: ${wxRes.data.errmsg}`
+          message: `WeChat login failed: ${wxRes.data.errmsg}`
         });
       }
+
       openid = wxRes.data.openid;
+      sessionKey = wxRes.data.session_key;
+      unionid = wxRes.data.unionid;  // May be undefined if not bound to open platform
+
+      logger.info('[WeChat Login] Code exchanged successfully', { openid });
     } else {
-      // Development fallback: use code hash as stable openid so same device = same user
+      // Development fallback: derive a stable openid from the code
+      logger.warn('[WeChat Login] No WECHAT_APP_ID/WECHAT_APP_SECRET configured, using dev fallback');
       openid = `dev_openid_${Buffer.from(code).toString('base64').slice(0, 16)}`;
+      sessionKey = 'dev_session_key';
     }
 
-    // Check if user exists with this openid
+    // Find existing user or create new one
     let user = await User.findOne({ 'wechat.openid': openid });
+    let isNewUser = false;
 
     if (!user) {
-      // Create new user
+      isNewUser = true;
+      logger.info('[WeChat Login] Creating new user', { openid });
+
       user = new User({
-        username: `wechat_${openid.slice(-8)}`,
-        email: `${openid}@wechat.temp`,
-        password: 'wechat_temp_password',
+        username: `wx_${openid.slice(-8)}_${Date.now().toString(36)}`,
+        email: `${openid}@wechat.placeholder`,
+        password: require('crypto').randomBytes(32).toString('hex'),  // Random password for WeChat users
         wechat: {
-          openid: openid,
+          openid,
+          unionid: unionid || undefined,
+          sessionKey,
           nickname: userInfo?.nickName || 'WeChat User',
           avatarUrl: userInfo?.avatarUrl || ''
+        },
+        profile: {
+          name: userInfo?.nickName || '',
+          avatar: userInfo?.avatarUrl || '',
+          gender: userInfo?.gender === 1 ? 'male' : userInfo?.gender === 2 ? 'female' : 'male'
         },
         isVerified: true
       });
 
       await user.save();
     } else {
-      // Update user info and last active time
+      // Update session_key and user info on every login
+      user.wechat.sessionKey = sessionKey;
+      if (unionid) {
+        user.wechat.unionid = unionid;
+      }
       if (userInfo) {
-        user.wechat.nickname = userInfo.nickName;
-        user.wechat.avatarUrl = userInfo.avatarUrl;
+        if (userInfo.nickName) user.wechat.nickname = userInfo.nickName;
+        if (userInfo.avatarUrl) user.wechat.avatarUrl = userInfo.avatarUrl;
       }
       user.stats.lastActiveAt = new Date();
       await user.save();
+
+      logger.info('[WeChat Login] Existing user logged in', { openid, userId: user._id });
     }
 
-    // Generate token
+    // Generate JWT token
     const token = generateToken(user._id);
 
     res.json({
       success: true,
-      message: 'WeChat login successful',
+      message: isNewUser ? 'WeChat registration successful' : 'WeChat login successful',
       data: {
         user,
-        token
+        token,
+        isNewUser
       }
     });
   } catch (error) {
-    console.error('WeChat login error:', error);
+    logger.error('[WeChat Login] Error during WeChat login', {
+      message: error.message,
+      stack: error.stack
+    });
     res.status(500).json({
       success: false,
       message: 'Server error during WeChat login'
@@ -242,7 +285,7 @@ router.get('/me', authenticate, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get user error:', error);
+    logger.error('[Auth] Get user error', { message: error.message, stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -265,7 +308,7 @@ router.post('/refresh', authenticate, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Token refresh error:', error);
+    logger.error('[Auth] Token refresh error', { message: error.message, stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Server error during token refresh'
@@ -285,7 +328,7 @@ router.post('/logout', authenticate, async (req, res) => {
       message: 'Logout successful'
     });
   } catch (error) {
-    console.error('Logout error:', error);
+    logger.error('[Auth] Logout error', { message: error.message, stack: error.stack });
     res.status(500).json({
       success: false,
       message: 'Server error during logout'

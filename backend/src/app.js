@@ -13,6 +13,7 @@ const aiRoutes = require('./routes/ai');
 const userRoutes = require('./routes/users');
 const communityRoutes = require('./routes/community');
 const calendarRoutes = require('./routes/calendar');
+const paymentRoutes = require('./routes/payment');
 
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
@@ -66,6 +67,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

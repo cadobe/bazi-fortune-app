@@ -64,35 +64,67 @@ App({
   // 微信登录
   wxLogin() {
     return new Promise((resolve, reject) => {
-      wx.login({
-        success: (res) => {
-          if (res.code) {
-            // 发送code到后端
-            wx.request({
-              url: `${this.globalData.baseUrl}/api/auth/wechat-login`,
-              method: 'POST',
-              data: { code: res.code },
-              success: (loginRes) => {
-                if (loginRes.data.success) {
-                  const { token, user, openid } = loginRes.data.data
-
-                  // 存储到本地
-                  wx.setStorageSync('token', token)
-                  this.globalData.userInfo = user
-                  this.globalData.openid = openid
-
-                  resolve(loginRes.data.data)
-                } else {
-                  reject(loginRes.data.message)
-                }
-              },
-              fail: reject
-            })
-          } else {
-            reject('获取微信code失败')
-          }
+      // 先获取用户信息（需要用户授权），再获取 code
+      wx.getUserProfile({
+        desc: '用于显示您的昵称和头像',
+        success: (profileRes) => {
+          const wechatUserInfo = profileRes.userInfo // { nickName, avatarUrl, gender, ... }
+          wx.login({
+            success: (res) => {
+              if (res.code) {
+                wx.request({
+                  url: `${this.globalData.baseUrl}/api/auth/wechat-login`,
+                  method: 'POST',
+                  data: { code: res.code, userInfo: wechatUserInfo },
+                  success: (loginRes) => {
+                    if (loginRes.data.success) {
+                      const { token, user, openid } = loginRes.data.data
+                      wx.setStorageSync('token', token)
+                      this.globalData.userInfo = user
+                      this.globalData.openid = openid
+                      resolve(loginRes.data.data)
+                    } else {
+                      reject(loginRes.data.message)
+                    }
+                  },
+                  fail: reject
+                })
+              } else {
+                reject('获取微信code失败')
+              }
+            },
+            fail: reject
+          })
         },
-        fail: reject
+        fail: () => {
+          // 用户拒绝授权，仍可静默登录（无昵称头像）
+          wx.login({
+            success: (res) => {
+              if (res.code) {
+                wx.request({
+                  url: `${this.globalData.baseUrl}/api/auth/wechat-login`,
+                  method: 'POST',
+                  data: { code: res.code },
+                  success: (loginRes) => {
+                    if (loginRes.data.success) {
+                      const { token, user, openid } = loginRes.data.data
+                      wx.setStorageSync('token', token)
+                      this.globalData.userInfo = user
+                      this.globalData.openid = openid
+                      resolve(loginRes.data.data)
+                    } else {
+                      reject(loginRes.data.message)
+                    }
+                  },
+                  fail: reject
+                })
+              } else {
+                reject('获取微信code失败')
+              }
+            },
+            fail: reject
+          })
+        }
       })
     })
   },

@@ -174,17 +174,17 @@
     <view class="section-title">AI命理问答</view>
 
     <!-- 聊天记录 -->
-    <view class="chat-messages" scroll-y="true">
+    <scroll-view class="chat-messages" scroll-y="true">
       <view class="message-item {{message.type}}" wx:for="{{chatMessages}}" wx:key="id">
         <view class="message-avatar">
-          <image src="{{message.type === 'user' ? '/assets/icons/user-avatar.png' : '/assets/icons/ai-avatar.png'}}" />
+          <view class="avatar-emoji">{{message.type === 'user' ? '🧑' : '🔮'}}</view>
         </view>
         <view class="message-content">
           <view class="message-text">{{message.content}}</view>
           <view class="message-time">{{message.time}}</view>
         </view>
       </view>
-    </view>
+    </scroll-view>
 
     <!-- 快速问题 -->
     <view class="quick-questions" wx:if="{{chatMessages.length === 0}}">
@@ -227,7 +227,7 @@
 
       <view class="master-list">
         <view class="master-item" wx:for="{{masters}}" wx:key="id">
-          <image class="master-avatar" src="{{item.avatar}}" />
+          <view class="master-avatar master-avatar-emoji">{{item.avatarEmoji || '🧙'}}</view>
           <view class="master-info">
             <view class="master-name">{{item.name}}</view>
             <view class="master-title">{{item.title}}</view>

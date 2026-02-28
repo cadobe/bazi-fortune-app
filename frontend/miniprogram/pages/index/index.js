@@ -1032,7 +1032,7 @@ Page({
    */
   saveToHistory(chartData) {
     try {
-      const charts = wx.getStorageSync('historyCharts') || []
+      const charts = wx.getStorageSync('savedCharts') || []
       const newChart = {
         id: Date.now(),
         ...chartData,
@@ -1052,7 +1052,7 @@ Page({
         charts.splice(20)
       }
 
-      wx.setStorageSync('historyCharts', charts)
+      wx.setStorageSync('savedCharts', charts)
       this.loadHistoryCharts()
 
     } catch (error) {
@@ -1144,8 +1144,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '八字排盘 - 专业命理服务',
-      path: '/pages/index/index',
-      imageUrl: '/assets/images/share-banner.png'
+      path: '/pages/index/index'
     }
   },
 
@@ -1155,8 +1154,7 @@ Page({
   onShareTimeline() {
     return {
       title: '八字排盘小程序',
-      query: 'from=timeline',
-      imageUrl: '/assets/images/share-banner.png'
+      query: 'from=timeline'
     }
   }
 })

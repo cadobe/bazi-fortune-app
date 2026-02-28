@@ -27,7 +27,7 @@ Page({
         id: 1,
         name: '张玄机',
         title: '资深命理师',
-        avatar: '/assets/images/master1.png',
+        avatarEmoji: '🧙‍♂️',
         rating: 4.9,
         price: 299,
         experience: '30年经验'
@@ -36,7 +36,7 @@ Page({
         id: 2,
         name: '李慧眼',
         title: '易学专家',
-        avatar: '/assets/images/master2.png',
+        avatarEmoji: '🔮',
         rating: 4.8,
         price: 199,
         experience: '25年经验'
@@ -45,7 +45,7 @@ Page({
         id: 3,
         name: '王善缘',
         title: '八字大师',
-        avatar: '/assets/images/master3.png',
+        avatarEmoji: '☯️',
         rating: 4.7,
         price: 399,
         experience: '35年经验'
@@ -505,10 +505,7 @@ Page({
       content: `确定预约${master.name}老师的咨询服务吗？费用为¥${master.price}/次`,
       success: (res) => {
         if (res.confirm) {
-          // 跳转到预约页面或支付页面
-          wx.navigateTo({
-            url: `/pages/consult/consult?masterId=${master.id}&price=${master.price}`
-          })
+          wx.showToast({ title: '预约功能即将上线', icon: 'none', duration: 2000 })
         }
       }
     })
@@ -665,8 +662,7 @@ Page({
   onShareAppMessage() {
     return {
       title: 'AI智能八字解读报告',
-      path: '/pages/index/index',
-      imageUrl: '/assets/images/share-analysis.png'
+      path: '/pages/index/index'
     }
   }
 })

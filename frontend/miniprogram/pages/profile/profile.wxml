@@ -14,7 +14,8 @@
   <!-- 已登录状态 -->
   <view wx:else>
     <view class="card user-card">
-      <image class="user-avatar" src="{{userInfo.wechat.avatarUrl || '/assets/images/default-avatar.png'}}" />
+      <image wx:if="{{userInfo.wechat.avatarUrl}}" class="user-avatar" src="{{userInfo.wechat.avatarUrl}}" />
+      <view wx:else class="user-avatar user-avatar-placeholder">🧑</view>
       <view class="user-name">{{userInfo.wechat.nickname || userInfo.username || '用户'}}</view>
       <view class="user-stats">
         <view class="stat-item">

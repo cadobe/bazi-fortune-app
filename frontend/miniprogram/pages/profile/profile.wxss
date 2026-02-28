@@ -52,6 +52,14 @@
   border-radius: 60rpx;
   margin-bottom: 20rpx;
 }
+.user-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60rpx;
+  background: #f0e6d3;
+  line-height: 120rpx;
+}
 .user-name {
   font-size: 36rpx;
   font-weight: bold;

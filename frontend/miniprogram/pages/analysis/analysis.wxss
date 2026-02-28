@@ -503,8 +503,6 @@
   text-align: center;
   flex-shrink: 0;
 }
-  margin-right: 20rpx;
-}
 
 .master-info {
   flex: 1;

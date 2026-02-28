@@ -21,12 +21,12 @@ Page({
     }
     // token 存在但 globalData 可能因重启丢失
     if (app.globalData.userInfo) {
-      this.setData({ isLoggedIn: true, userInfo: app.globalData.userInfo })
+      this.setData({ isLoggedIn: true, userInfo: this._mergeWechatInfo(app.globalData.userInfo) })
     } else {
       try {
         const data = await request('/api/auth/me')
         app.globalData.userInfo = data.user
-        this.setData({ isLoggedIn: true, userInfo: data.user })
+        this.setData({ isLoggedIn: true, userInfo: this._mergeWechatInfo(data.user) })
       } catch (e) {
         wx.removeStorageSync('token')
         this.setData({ isLoggedIn: false, userInfo: null })
@@ -36,11 +36,25 @@ Page({
     this.loadUserStats()
   },
 
+  // 用本地缓存的真实微信头像/昵称覆盖后端数据
+  _mergeWechatInfo(user) {
+    const cached = wx.getStorageSync('wechatUserInfo')
+    if (!cached) return user
+    return {
+      ...user,
+      wechat: {
+        ...(user.wechat || {}),
+        nickname: cached.nickName || (user.wechat && user.wechat.nickname),
+        avatarUrl: cached.avatarUrl || (user.wechat && user.wechat.avatarUrl)
+      }
+    }
+  },
+
   async handleLogin() {
     this.setData({ isLoading: true })
     try {
       await app.wxLogin()
-      this.setData({ isLoggedIn: true, userInfo: app.globalData.userInfo, isLoading: false })
+      this.setData({ isLoggedIn: true, userInfo: this._mergeWechatInfo(app.globalData.userInfo), isLoading: false })
       this.loadUserStats()
     } catch (e) {
       this.setData({ isLoading: false })
